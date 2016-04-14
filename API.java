@@ -19,6 +19,7 @@ import uk.ac.bris.cs.databases.api.PersonView;
 import uk.ac.bris.cs.databases.api.SimpleForumSummaryView;
 import uk.ac.bris.cs.databases.api.SimpleTopicView;
 import uk.ac.bris.cs.databases.api.TopicView;
+import uk.ac.bris.cs.databases.util.Params;
 
 /**
  *
@@ -53,7 +54,9 @@ public class API implements APIProvider {
 
     @Override
     public Result<PersonView> getPersonView(String username) {
-       if(username == null || username.equals("")) return null;
+       Params.cannotBeEmpty(username);
+       Params.cannotBeNull(username);
+       
        try {
           PreparedStatement s = c.prepareStatement(
                   "SELECT name, username, stuId FROM Users " +
@@ -63,6 +66,8 @@ public class API implements APIProvider {
        } catch (SQLException ex) {
           printError("Error in getPersonView create statement: " + ex.getMessage());
        }
+       
+       
        
        return null;
     }
