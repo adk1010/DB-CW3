@@ -55,29 +55,32 @@ public class API implements APIProvider {
     //Test with: http://localhost:8000/person/:tb15269
     @Override
     public Result<PersonView> getPersonView(String username) {
+       printDebug("getPersonView");
        Params.cannotBeEmpty(username);
        Params.cannotBeNull(username);
        
-      try {
-          PreparedStatement s = c.prepareStatement(
-          "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
-          );
-          s.setString(1, username);
-          
-                 
+      try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
+            );
+         ){ 
+         s.setString(1, username);
+           
          ResultSet r = s.executeQuery();
 
          while (r.next()) {
             String rtnName = r.getString("name");
             String rtnUsername = r.getString("username");
             String rtnStuId = r.getString("rtnName");
+            printDebug(rtnName + " " + rtnUsername + " " + rtnStuId);
             PersonView pv = new PersonView(rtnName, rtnUsername, rtnStuId);
             return Result.success(pv);
          }
          
-         s.close(); 
+         s.close(); //Don't think I need this with try with resources. Will check.
+         
        }catch (SQLException ex) {
-          printError("Error in getPersonView create statement: " + ex.getMessage());
+          printError("Error in getPersonView: " + ex.getMessage());
        }       
        return null;
     }
@@ -174,6 +177,10 @@ public class API implements APIProvider {
     
     private void printError(String s){
        System.err.println(s);
+    }
+    
+    private void printDebug(String s){
+       System.out.println("\\x1b[32m" + s + "\\x1b[0m");
     }
 
    }
