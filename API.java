@@ -61,7 +61,9 @@ public class API implements APIProvider {
             );
          ){
          s.setString(1, username);
+
          ResultSet r = s.executeQuery();
+         
          PersonView pv = new PersonView(r.getString("name"),
                                         r.getString("username"),
                                         r.getString("stuId"));
@@ -84,11 +86,12 @@ public class API implements APIProvider {
          ){
          ResultSet r = s.executeQuery();
 
-      /*   while (!r.isEmpty()) { */
-            List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
+         List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
+
+         while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"), r.getString("name"));
             simpleForumsList.add(sfsv);
-      //   }
+         }
 
          return Result.success(simpleForumsList);
 
