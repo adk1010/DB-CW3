@@ -60,7 +60,7 @@ public class API implements APIProvider {
        
       try {
           PreparedStatement s = c.prepareStatement(
-          "SELECT name, username, stuId FROM Users " + "WHERE username = ?"
+          "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
           );
           s.setString(1, username);
           
