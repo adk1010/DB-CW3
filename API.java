@@ -2,7 +2,7 @@ package uk.ac.bris.cs.databases.cwk3;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import uk.ac.bris.cs.databases.api.APIProvider;
 import uk.ac.bris.cs.databases.api.AdvancedForumSummaryView;
 import uk.ac.bris.cs.databases.api.AdvancedForumView;
@@ -30,12 +30,12 @@ public class API implements APIProvider {
 
     @Override
     public Result<Map<String, String>> getUsers() {
-      Map<String, String> map = new Map<>();
+      Map<String, String> map = new HashMap<>();
 
       map.put("csxdb", "David");
       map.put("csxaa", "Alice");
 
-      return map;
+      return Result.success(map);
     }
 
     @Override
