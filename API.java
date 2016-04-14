@@ -52,10 +52,11 @@ public class API implements APIProvider {
     );
     */
 
-    //Test with: http://localhost:8000/person/:tb15269
+    //Test with: http://localhost:8000/person/tb15269
     @Override
     public Result<PersonView> getPersonView(String username) {
        printDebug("getPersonView");
+       
        Params.cannotBeEmpty(username);
        Params.cannotBeNull(username);
        
@@ -71,18 +72,18 @@ public class API implements APIProvider {
          while (r.next()) {
             String rtnName = r.getString("name");
             String rtnUsername = r.getString("username");
-            String rtnStuId = r.getString("rtnName");
+            String rtnStuId = r.getString("stuId");
+            
             printDebug(rtnName + " " + rtnUsername + " " + rtnStuId);
+            
             PersonView pv = new PersonView(rtnName, rtnUsername, rtnStuId);
             return Result.success(pv);
          }
          
-         s.close(); //Don't think I need this with try with resources. Will check.
-         
        }catch (SQLException ex) {
           printError("Error in getPersonView: " + ex.getMessage());
        }       
-       return null;
+       return Result.fatal("Fatal getPersonView");
     }
 
     @Override
