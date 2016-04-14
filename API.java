@@ -57,18 +57,27 @@ public class API implements APIProvider {
        Params.cannotBeEmpty(username);
        Params.cannotBeNull(username);
        
-       try {
+      try {
           PreparedStatement s = c.prepareStatement(
-                  "SELECT name, username, stuId FROM Users " +
-                          "WHERE username = ?"
+          "SELECT name, username, stuId FROM Users " + "WHERE username = ?"
           );
           s.setString(1, username);
-       } catch (SQLException ex) {
+          
+                 
+         ResultSet r = s.executeQuery();
+
+         while (r.next()) {
+            String rtnName = r.getString("name");
+            String rtnUsername = r.getString("username");
+            String rtnStuId = r.getString("rtnName");
+            PersonView pv = new PersonView(rtnName, rtnUsername, rtnStuId);
+            return Result.success(pv);
+         }
+         
+         s.close(); 
+       }catch (SQLException ex) {
           printError("Error in getPersonView create statement: " + ex.getMessage());
-       }
-       
-       
-       
+       }       
        return null;
     }
 
