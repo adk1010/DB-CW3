@@ -1,4 +1,5 @@
 // cd src/uk/ac/bris/cs/databases/cwk3
+// cd ../../../../../../..
 
 package uk.ac.bris.cs.databases.cwk3;
 
@@ -45,23 +46,23 @@ public class API implements APIProvider {
 
     //Test with: http://localhost:8000/person/tb15269
    @Override
-   public Result<PersonView> getPersonView(String username) {       
+   public Result<PersonView> getPersonView(String username) {
       Params.cannotBeEmpty(username);
       Params.cannotBeNull(username);
       try(
             PreparedStatement s = c.prepareStatement(
                "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
             );
-         ){ 
-         s.setString(1, username);           
+         ){
+         s.setString(1, username);
          ResultSet r = s.executeQuery();
          PersonView pv = new PersonView(r.getString("name"),
                                         r.getString("username"),
                                         r.getString("stuId"));
-         return Result.success(pv);   
+         return Result.success(pv);
       }catch (SQLException ex) {
          printError("Error in getPersonView: " + ex.getMessage());
-      }       
+      }
       return Result.fatal("Fatal getPersonView");
    }
 
@@ -154,11 +155,11 @@ public class API implements APIProvider {
     public Result likePost(String username, long topicId, int post, boolean like) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
     private void printError(String s){
        System.err.println(s);
     }
-    
+
     private void printDebug(String s){
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
     }
