@@ -11,7 +11,7 @@ export PATH=${PATH}:${ANT_HOME}/bin
 package uk.ac.bris.cs.databases.cwk3;
 
 import java.sql.*;
-import java.util.List;
+//import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,7 +51,7 @@ public class API implements APIProvider {
       return Result.success(map);
     }
 
-    //Test with: http://localhost:8000/person/tb15269
+   //Test with: http://localhost:8000/person/tb15269
    @Override
    public Result<PersonView> getPersonView(String username) {
       Params.cannotBeEmpty(username);
@@ -67,15 +67,29 @@ public class API implements APIProvider {
                                         r.getString("username"),
                                         r.getString("stuId"));
          return Result.success(pv);
+
       }catch (SQLException ex) {
          printError("Error in getPersonView: " + ex.getMessage());
       }
       return Result.fatal("Fatal getPersonView");
    }
 
+    //Test with: http://localhost:8000/ ???
     @Override
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
-        throw new UnsupportedOperationException("Not supported yet.");
+      try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT id, name FROM Forum;"
+            );
+         ){
+         ResultSet r = s.executeQuery();
+         List simpleForumSummaryView = new ArrayList<SimpleForumSummaryView>(/*r.getLong("id"), r.getString("name")*/);
+         return Result.success(simpleForumSummaryView);
+
+      }catch (SQLException ex) {
+         printError("Error in getSimpleForums: " + ex.getMessage());
+      }
+      return Result.fatal("Fatal getSimpleForums");
     }
 
     @Override
