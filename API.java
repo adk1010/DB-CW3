@@ -1,11 +1,12 @@
 // cd src/uk/ac/bris/cs/databases/cwk3
-// cd ../../../../../../..
 
 package uk.ac.bris.cs.databases.cwk3;
 
-import java.sql.Connection;
+import java.sql.*;
 import java.util.List;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import uk.ac.bris.cs.databases.api.APIProvider;
 import uk.ac.bris.cs.databases.api.AdvancedForumSummaryView;
 import uk.ac.bris.cs.databases.api.AdvancedForumView;
@@ -43,7 +44,17 @@ public class API implements APIProvider {
 
     @Override
     public Result<PersonView> getPersonView(String username) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try {
+          PreparedStatement s = c.prepareStatement(
+                  "SELECT id, email FROM Users " +
+                          "WHERE name = ? AND pass = ?"
+          );
+          s.setString(1, username);
+       } catch (SQLException ex) {
+          printError("Error in getPersonView: " + ex.getMessage());
+       }
+       
+       return null;
     }
 
     @Override
@@ -134,6 +145,10 @@ public class API implements APIProvider {
     @Override
     public Result likePost(String username, long topicId, int post, boolean like) {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    private void printError(String s){
+       System.err.println(s);
     }
 
    }
