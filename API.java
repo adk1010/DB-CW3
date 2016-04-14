@@ -2,9 +2,8 @@
 cd src/uk/ac/bris/cs/databases/cwk3
 cd ../../../../../../..
 
-ANT ON UNIX
-export ANT_HOME=/usr/local/ant
-export JAVA_HOME=/usr/local/jdk1.7.0_51
+ANT ON UNIX - Note for Alex
+export ANT_HOME=/Library/Ant
 export PATH=${PATH}:${ANT_HOME}/bin
 */
 
@@ -13,8 +12,8 @@ package uk.ac.bris.cs.databases.cwk3;
 import java.sql.*;
 //import java.util.List;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+//import java.util.logging.Level;
+//import java.util.logging.Logger;
 import uk.ac.bris.cs.databases.api.APIProvider;
 import uk.ac.bris.cs.databases.api.AdvancedForumSummaryView;
 import uk.ac.bris.cs.databases.api.AdvancedForumView;
@@ -66,6 +65,7 @@ public class API implements APIProvider {
          PersonView pv = new PersonView(r.getString("name"),
                                         r.getString("username"),
                                         r.getString("stuId"));
+
          return Result.success(pv);
 
       }catch (SQLException ex) {
@@ -74,7 +74,7 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getPersonView");
    }
 
-    //Test with: http://localhost:8000/ ???
+    //Test with: http://localhost:8000/forums0
     @Override
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
       try(
@@ -83,8 +83,11 @@ public class API implements APIProvider {
             );
          ){
          ResultSet r = s.executeQuery();
-         List simpleForumSummaryView = new ArrayList<SimpleForumSummaryView>(/*r.getLong("id"), r.getString("name")*/);
-         return Result.success(simpleForumSummaryView);
+         List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
+         SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"), r.getString("name"));
+         simpleForumsList.add(sfsv);
+
+         return Result.success(simpleForumsList);
 
       }catch (SQLException ex) {
          printError("Error in getSimpleForums: " + ex.getMessage());
