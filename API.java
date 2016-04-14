@@ -41,17 +41,27 @@ public class API implements APIProvider {
 
       return Result.success(map);
     }
+    
+    /*
+    CREATE TABLE Person (
+      id INTEGER PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      username VARCHAR(10) NOT NULL UNIQUE,
+      stuId VARCHAR(10) NULL
+    );
+    */
 
     @Override
     public Result<PersonView> getPersonView(String username) {
+       if(username == null || username.equals("")) return null;
        try {
           PreparedStatement s = c.prepareStatement(
-                  "SELECT id, email FROM Users " +
-                          "WHERE name = ? AND pass = ?"
+                  "SELECT name, username, stuId FROM Users " +
+                          "WHERE username = ?"
           );
           s.setString(1, username);
        } catch (SQLException ex) {
-          printError("Error in getPersonView: " + ex.getMessage());
+          printError("Error in getPersonView create statement: " + ex.getMessage());
        }
        
        return null;
