@@ -1,4 +1,5 @@
 // cd src/uk/ac/bris/cs/databases/cwk3
+// cd ../../../../../../..
 
 package uk.ac.bris.cs.databases.cwk3;
 
