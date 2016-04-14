@@ -42,49 +42,28 @@ public class API implements APIProvider {
 
       return Result.success(map);
     }
-    
-    /*
-    CREATE TABLE Person (
-      id INTEGER PRIMARY KEY,
-      name VARCHAR(100) NOT NULL,
-      username VARCHAR(10) NOT NULL UNIQUE,
-      stuId VARCHAR(10) NULL
-    );
-    */
 
     //Test with: http://localhost:8000/person/tb15269
-    @Override
-    public Result<PersonView> getPersonView(String username) {
-       printDebug("getPersonView");
-       
-       Params.cannotBeEmpty(username);
-       Params.cannotBeNull(username);
-       
+   @Override
+   public Result<PersonView> getPersonView(String username) {       
+      Params.cannotBeEmpty(username);
+      Params.cannotBeNull(username);
       try(
             PreparedStatement s = c.prepareStatement(
                "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
             );
          ){ 
-         s.setString(1, username);
-           
+         s.setString(1, username);           
          ResultSet r = s.executeQuery();
-
-         while (r.next()) {
-            String rtnName = r.getString("name");
-            String rtnUsername = r.getString("username");
-            String rtnStuId = r.getString("stuId");
-            
-            printDebug(rtnName + " " + rtnUsername + " " + rtnStuId);
-            
-            PersonView pv = new PersonView(rtnName, rtnUsername, rtnStuId);
-            return Result.success(pv);
-         }
-         
-       }catch (SQLException ex) {
-          printError("Error in getPersonView: " + ex.getMessage());
-       }       
-       return Result.fatal("Fatal getPersonView");
-    }
+         PersonView pv = new PersonView(r.getString("name"),
+                                        r.getString("username"),
+                                        r.getString("stuId"));
+         return Result.success(pv);   
+      }catch (SQLException ex) {
+         printError("Error in getPersonView: " + ex.getMessage());
+      }       
+      return Result.fatal("Fatal getPersonView");
+   }
 
     @Override
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
