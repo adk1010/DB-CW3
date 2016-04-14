@@ -1,5 +1,12 @@
-// cd src/uk/ac/bris/cs/databases/cwk3
-// cd ../../../../../../..
+/*
+cd src/uk/ac/bris/cs/databases/cwk3
+cd ../../../../../../..
+
+ANT ON UNIX
+export ANT_HOME=/usr/local/ant
+export JAVA_HOME=/usr/local/jdk1.7.0_51
+export PATH=${PATH}:${ANT_HOME}/bin
+*/
 
 package uk.ac.bris.cs.databases.cwk3;
 
