@@ -83,9 +83,12 @@ public class API implements APIProvider {
             );
          ){
          ResultSet r = s.executeQuery();
-         List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
-         SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"), r.getString("name"));
-         simpleForumsList.add(sfsv);
+
+      /*   while (!r.isEmpty()) { */
+            List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
+            SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"), r.getString("name"));
+            simpleForumsList.add(sfsv);
+      //   }
 
          return Result.success(simpleForumsList);
 
