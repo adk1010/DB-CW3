@@ -39,16 +39,30 @@ public class API implements APIProvider {
     public API(Connection c) {
         this.c = c;
     }
-
+	
+	//Test with: http://localhost:8000/people
     @Override
     public Result<Map<String, String>> getUsers() {
-      Map<String, String> map = new HashMap<>();
-
-      map.put("csxdb", "David");
-      map.put("csxaa", "Alice");
-
-      return Result.success(map);
-    }
+	Map<String, String> map = new HashMap<>();
+	try(
+		PreparedStatement s = c.prepareStatement(
+		"SELECT username, name FROM Person"
+		);
+	){
+	
+	ResultSet r = s.executeQuery();
+	
+	while(r.next()){
+		map.put(r.getString("username"), r.getString("name"));
+	}
+	return Result.success(map);
+	
+	}catch (SQLException ex) {
+		printError("Error in getUsers: " + ex.getMessage());
+	}
+	
+	return Result.fatal("Fatal getUsers");
+}
 
    //Test with: http://localhost:8000/person/tb15269
    @Override
