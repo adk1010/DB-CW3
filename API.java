@@ -115,7 +115,7 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    // Test with: http://localhost:8000/topic0/:1
+    // Test with: http://localhost:8000/topic0/1
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
@@ -134,7 +134,7 @@ public class API implements APIProvider {
          List simplePostsList = new ArrayList<SimplePostView>();
 
          while (r.next()) {                                 // id is not the same as the post number order
-            SimplePostView spv = new SimplePostView(r.getLong("p.id"),
+            SimplePostView spv = new SimplePostView((int) r.getLong("p.id"),
                                                     r.getString("per.username"),
                                                     r.getString("p.text"),
                                                     r.getInt("p.date"));
