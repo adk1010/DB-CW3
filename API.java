@@ -24,6 +24,7 @@ import uk.ac.bris.cs.databases.api.PostView;
 import uk.ac.bris.cs.databases.api.Result;
 import uk.ac.bris.cs.databases.api.PersonView;
 import uk.ac.bris.cs.databases.api.SimpleForumSummaryView;
+import uk.ac.bris.cs.databases.api.SimplePostView; //ALEX JUST ADDED THIS - SHOULD WE NEED TO BE DOING THIS?
 import uk.ac.bris.cs.databases.api.SimpleTopicView;
 import uk.ac.bris.cs.databases.api.TopicView;
 import uk.ac.bris.cs.databases.util.Params;
@@ -39,30 +40,30 @@ public class API implements APIProvider {
     public API(Connection c) {
         this.c = c;
     }
-	
+
 	//Test with: http://localhost:8000/people
-    @Override
-    public Result<Map<String, String>> getUsers() {
-	Map<String, String> map = new HashMap<>();
-	try(
-		PreparedStatement s = c.prepareStatement(
-		"SELECT username, name FROM Person"
-		);
-	){
-	
-	ResultSet r = s.executeQuery();
-	
-	while(r.next()){
-		map.put(r.getString("username"), r.getString("name"));
-	}
-	return Result.success(map);
-	
-	}catch (SQLException ex) {
-		printError("Error in getUsers: " + ex.getMessage());
-	}
-	
-	return Result.fatal("Fatal getUsers");
-}
+   @Override
+   public Result<Map<String, String>> getUsers() {
+   	Map<String, String> map = new HashMap<>();
+   	try(
+   		PreparedStatement s = c.prepareStatement(
+   		"SELECT username, name FROM Person;"
+   		);
+   	){
+
+   	ResultSet r = s.executeQuery();
+
+   	while(r.next()){
+   		map.put(r.getString("username"), r.getString("name"));
+   	}
+   	return Result.success(map);
+
+   	}catch (SQLException ex) {
+   		printError("Error in getUsers: " + ex.getMessage());
+   	}
+
+   	return Result.fatal("Fatal getUsers");
+   }
 
    //Test with: http://localhost:8000/person/tb15269
    @Override
@@ -77,7 +78,7 @@ public class API implements APIProvider {
          s.setString(1, username);
 
          ResultSet r = s.executeQuery();
-         
+
          PersonView pv = new PersonView(r.getString("name"),
                                         r.getString("username"),
                                         r.getString("stuId"));
@@ -103,7 +104,8 @@ public class API implements APIProvider {
          List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
 
          while (r.next()) {
-            SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"), r.getString("name"));
+            SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
+                                                                     r.getString("name"));
             simpleForumsList.add(sfsv);
          }
 
@@ -125,9 +127,44 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    // Test with: http://localhost:8000/topic0/:1
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
-        throw new UnsupportedOperationException("Not supported yet.");
+      try(
+            PreparedStatement s = c.prepareStatement(
+                                 // may not need p.id
+               "SELECT t.id, t.title, p.id, per.username, p.text, p.date FROM Topic AS t " +
+               "JOIN Post AS p ON t.id = p.topicid " +
+               "JOIN Person AS per ON p.authorid = per.id " +
+               "WHERE t.id = ?"
+            );
+         ){
+         s.setLong(1, topicId);
+
+         ResultSet r = s.executeQuery();
+
+         List simplePostsList = new ArrayList<SimplePostView>();
+
+         while (r.next()) {                                 // id is not the same as the post number order
+            SimplePostView spv = new SimplePostView(r.getLong("p.id"),
+                                                    r.getString("per.username"),
+                                                    r.getString("p.text"),
+                                                    r.getInt("p.date"));
+            simplePostsList.add(spv);
+         }
+
+         r.first();
+
+         SimpleTopicView stv = new SimpleTopicView(r.getLong("t.id"),
+                                                   r.getString("t.title"),
+                                                   simplePostsList);
+
+         return Result.success(stv);
+
+      }catch (SQLException ex) {
+         printError("Error in getSimpleTopic: " + ex.getMessage());
+      }
+      return Result.fatal("Fatal getSimpleTopic");
     }
 
     @Override
