@@ -41,27 +41,23 @@ public class API implements APIProvider {
         this.c = c;
     }
 
-	//Test with: http://localhost:8000/people
+   //Test with: http://localhost:8000/people
    @Override
    public Result<Map<String, String>> getUsers() {
-   	Map<String, String> map = new HashMap<>();
    	try(
    		PreparedStatement s = c.prepareStatement(
-   		"SELECT username, name FROM Person;"
+               "SELECT username, name FROM Person;"
    		);
-   	){
-
-   	ResultSet r = s.executeQuery();
-
-   	while(r.next()){
-   		map.put(r.getString("username"), r.getString("name"));
-   	}
-   	return Result.success(map);
-
+         ){
+            Map<String, String> map = new HashMap<>();
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+               map.put(r.getString("username"), r.getString("name"));
+            }
+            return Result.success(map);
    	}catch (SQLException ex) {
-   		printError("Error in getUsers: " + ex.getMessage());
+         printError("Error in getUsers: " + ex.getMessage());
    	}
-
    	return Result.fatal("Fatal getUsers");
    }
 
@@ -76,15 +72,11 @@ public class API implements APIProvider {
             );
          ){
          s.setString(1, username);
-
          ResultSet r = s.executeQuery();
-
          PersonView pv = new PersonView(r.getString("name"),
                                         r.getString("username"),
                                         r.getString("stuId"));
-
          return Result.success(pv);
-
       }catch (SQLException ex) {
          printError("Error in getPersonView: " + ex.getMessage());
       }
@@ -100,17 +92,13 @@ public class API implements APIProvider {
             );
          ){
          ResultSet r = s.executeQuery();
-
          List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
-
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
                                                                      r.getString("name"));
             simpleForumsList.add(sfsv);
          }
-
          return Result.success(simpleForumsList);
-
       }catch (SQLException ex) {
          printError("Error in getSimpleForums: " + ex.getMessage());
       }
