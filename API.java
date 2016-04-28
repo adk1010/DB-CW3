@@ -88,14 +88,14 @@ public class API implements APIProvider {
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT id, name FROM Forum;"
+               "SELECT id, title FROM Forum;"
             );
          ){
          ResultSet r = s.executeQuery();
          List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
-                                                                     r.getString("name"));
+                                                                     r.getString("title"));
             simpleForumsList.add(sfsv);
          }
          return Result.success(simpleForumsList);
@@ -183,7 +183,7 @@ public class API implements APIProvider {
     public Result<List<ForumSummaryView>> getForums() {
       try(
    		PreparedStatement s = c.prepareStatement(
-               "SELECT f.id, f. FROM Person;"
+               "SELECT f.id, f.title FROM Forum;"
    		);
          ){
             Map<String, String> map = new HashMap<>();
