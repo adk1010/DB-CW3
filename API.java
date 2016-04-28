@@ -44,22 +44,21 @@ public class API implements APIProvider {
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
     public static void main(String[] args){
+      //SET UP FOR TESTS
+         ApplicationContext c = ApplicationContext.getInstance();
+         APIProvider api;
+         Connection conn;
+         try{
+            conn = DriverManager.getConnection(DATABASE);
+            conn.setAutoCommit(false);
+            api = new API(conn);
+            c.setApi(api);
+         } catch (SQLException e) {
+            throw new RuntimeException(e);
+         }
+
       //TESTS
-       
-      ApplicationContext c = ApplicationContext.getInstance();
-
-      APIProvider api;
-      Connection conn;
-      try {
-          conn = DriverManager.getConnection(DATABASE);
-          conn.setAutoCommit(false);
-          api = new API(conn);
-          c.setApi(api);
-      } catch (SQLException e) {
-          throw new RuntimeException(e);
-      }
-
-       api.p("All good in da hood");
+         api.p("All good in da hood");
     }
     @Override
     public void p(String s){
