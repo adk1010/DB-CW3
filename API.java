@@ -107,7 +107,17 @@ public class API implements APIProvider {
 
     @Override
     public Result<Integer> countPostsInTopic(long topicId) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try{
+         PreparedStatement s = c.prepareStatement(
+               "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?"
+            );
+         s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         Result.success(r.getInt("numposts"));
+       }catch(SQLException ex){
+         printError("Error in getSimpleTopic: " + ex.getMessage());
+       }
+       return Result.fatal("Fatal getSimpleTopic");
     }
 
     @Override
