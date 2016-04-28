@@ -88,7 +88,7 @@ public class API implements APIProvider {
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT id, name FROM Forum;"
+               "SELECT id, title FROM Forum;"
             );
          ){
          ResultSet r = s.executeQuery();
@@ -118,7 +118,7 @@ public class API implements APIProvider {
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
-       return Result.fatal("Fatal getSimpleTopic");
+       return Result.fatal("Fatal getPostsInTopic");
     }
 
     @Override
@@ -173,9 +173,36 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getSimpleTopic");
     }
 
+    //testwith: 
     @Override
     public Result<PostView> getLatestPost(long topicId) {
-       //TOM
+       try{
+         PreparedStatement s = c.prepareStatement(
+               "SELECT forum.id as forumid, post.topicid as topicid, post.id as postNumber, person.name as authorname, person.username as username, post.text as text, post.date as postedAt, likes.numLikes as numberOfLikes FROM POST" +
+               "JOIN PERSON on post.authorid = person.id" +
+               "JOIN TOPIC on post.topicid = topic.id" +
+               "JOIN FORUM on topic.forumid = forum.id" +
+               "JOIN (SELECT postid, count(*) as numLikes FROM POST_LIKERS GROUP BY postid) as likes ON likes.postid = post.id" +
+               "WHERE topicid = 1" +
+               "ORDER BY postNumber DESC LIMIT 1;"
+            );
+         s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         
+         //PostView(long forumId, long topicId, int postNumber, String authorName, String authorUserName, String text, int postedAt, int likes)
+         PostView pv = new PostView(r.getLong("forumid"),
+                                 r.getLong("topicid"),
+                                 r.getInt("postNumber"),
+                                 r.getString("authorname"),
+                                 r.getString("username"),
+                                 r.getString("text"),
+                                 r.getInt("postedAt"),
+                                 r.getInt("numberOfLikes"));
+         Result.success(pv);
+       }catch(SQLException ex){
+         printError("Error in getSimpleTopic: " + ex.getMessage());
+       }
+       return Result.fatal("Fatal getSimpleTopic");
     }
 
     @Override
