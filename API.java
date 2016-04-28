@@ -123,8 +123,33 @@ public class API implements APIProvider {
 
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+       if(doesTopicExist(topicId) == false){
+          return Result.failure("Failure: topic does not exist");
+       };
+       try(
+         PreparedStatement s = c.prepareStatement(
+            "SELECT name, username, studentId " +
+            "FROM Person " +
+            "JOIN Topic_Likers ON Topic_Likers.personid = Person.id " +
+            "WHERE Topic_likers.topicid = ?" +
+            "ORDER BY Person.name DESC;"
+   		);
+         ){
+         s.setLong(1, topicId);
+         
+            ResultSet r = s.executeQuery();
+            List<PersonView> likers = new ArrayList<>();
+            while(r.next()){
+               PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("studentId"));
+               likers.add(liker);
+            }
+            return Result.success(likers);
+   	}catch (SQLException ex) {
+         printError("Error in getLikers: " + ex.getMessage());
+   	}
+   	return Result.fatal("Fatal getLikers");
+   }
+    
 
     /* Test with: http://localhost:8000/topic0/1
        or
@@ -249,6 +274,30 @@ public class API implements APIProvider {
 
     private void printDebug(String s){
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
+    }
+    
+    boolean doesTopicExist(long topicId){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT COUNT(*) " +
+               "FROM Topic " +
+            );
+         ){
+         s.setLong(1, topicId);
+
+         ResultSet r = s.executeQuery();
+         
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+
+      }catch (SQLException ex) {
+         printError("Error while querying if topic exists: " + ex.getMessage());
+         return false;
+      }
     }
 
    }
