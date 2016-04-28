@@ -58,11 +58,68 @@ public class API implements APIProvider {
          }
 
       //TESTS
-         api.p("All good in da hood");
+         int passed = 0;
+         
+         if(api.test(api.getUsers(), "success")) passed++;
+         else api.p("Failed test 0");
+         
+         /*
+         we should make database/unitTests.sqlite3 and load that instead of
+         one that will keep changing as we play with the forum.
+         
+         DONE getUsers()
+         getPersonView(String username)
+         getSimpleForums()
+         countPostsInTopic(long topicId)
+         getLikers(long topicId)
+         getSimpleTopic(long topicId)
+         
+         //Level 2
+         getLatestPost(long topicId)
+         getForums()
+         createForum(String title)
+         createPost(long topicId, String username, String text)
+         addNewPerson(String name, String username, String studentId)
+         getForum(long id)
+         getTopic(long topicId, int page)
+         likeTopic(String username, long topicId, boolean like)
+         favouriteTopic(String username, long topicId, boolean fav)
+         
+         //LEVEL 3
+         createTopic(long forumId, String username, String title, String text)
+         getAdvancedForums()
+         getAdvancedPersonView(String username)
+         getAdvancedForum(long id)
+         likePost(String username, long topicId, int post, boolean like)
+         */
+         
+         api.p("Passed " + passed + " tests");
     }
+    
     @Override
     public void p(String s){
        System.out.println(s);
+    }
+    
+    @Override
+    public boolean test(Result r, String expectedResult){
+       try{
+         switch(expectedResult){
+            case "success":
+               if(r.isSuccess()) return true;
+               return false;
+            case "failure":
+               if(!r.isFatal()) return true; //isFatal returns false if is failiure, exception if success, true if fatal
+               return false;
+            case "fatal":
+               if(r.isFatal()) return true;
+               return false;
+            default:
+               return false;
+         }
+       }catch(RuntimeException e){
+          return false;
+       }
     }
     
    //Test with: http://localhost:8000/people
