@@ -128,6 +128,9 @@ public class API implements APIProvider {
     /* Test with: http://localhost:8000/topic0/1
        or
        Test with: http://localhost:8000/topic0/2
+
+       SQL query:
+       SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;
     */
 
     @Override
