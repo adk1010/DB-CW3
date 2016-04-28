@@ -185,17 +185,19 @@ public class API implements APIProvider {
    		PreparedStatement s = c.prepareStatement(
                "SELECT f.id, f.title FROM Forum;"
    		);
-         ){
-            Map<String, String> map = new HashMap<>();
-            ResultSet r = s.executeQuery();
-            while(r.next()){
-               map.put(r.getString("username"), r.getString("name"));
-            }
-            return Result.success(map);
-   	}catch (SQLException ex) {
-         printError("Error in getUsers: " + ex.getMessage());
-   	}
-   	return Result.fatal("Fatal getUsers");
+      ){
+         ResultSet r = s.executeQuery();
+         List forumsList = new ArrayList<ForumSummaryView>();
+         while (r.next()) {
+            ForumSummaryView fsv = new ForumSummaryView(r.getString("title"), r.getLong("id"));
+            simpleForumsList.add(sfsv);
+         }
+         return Result.success(forumsList);
+
+      }catch (SQLException ex) {
+         printError("Error in getForums: " + ex.getMessage());
+      }
+      return Result.fatal("Fatal getForums");
     }
 
     @Override
