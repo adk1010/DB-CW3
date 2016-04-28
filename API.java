@@ -130,21 +130,23 @@ public class API implements APIProvider {
          s.setLong(1, topicId);
 
          ResultSet r = s.executeQuery();
-
+         
+         String topicTitle = r.getString("title");
+         Long topicID = r.getLong("topicid");
+         
          //Collect post and add to list
          List<SimplePostView> simplePostsList = new ArrayList<>();
-         while (r.next()) {                                 // id is not the same as the post number order
+         while (r.next()) {              
             SimplePostView spv = new SimplePostView(r.getInt("postid"),
                                                     r.getString("username"),
                                                     r.getString("text"),
                                                     r.getInt("date"));
             simplePostsList.add(spv);
          }
-
-         r.first(); //Have to jump back to first??
+   
          //Create simpleTopicView pass list of posts
-         SimpleTopicView stv = new SimpleTopicView(r.getLong("id"),
-                                                   r.getString("title"),
+         SimpleTopicView stv = new SimpleTopicView(topicID,
+                                                   topicTitle,
                                                    simplePostsList);
 
          return Result.success(stv);
