@@ -104,7 +104,8 @@ public class API implements APIProvider {
       }
       return Result.fatal("Fatal getSimpleForums");
     }
-
+    
+    //TEST WITH 
     @Override
     public Result<Integer> countPostsInTopic(long topicId) {
        try{
