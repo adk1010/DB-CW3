@@ -28,6 +28,7 @@ import uk.ac.bris.cs.databases.api.SimplePostView; //ALEX JUST ADDED THIS - SHOU
 import uk.ac.bris.cs.databases.api.SimpleTopicView;
 import uk.ac.bris.cs.databases.api.TopicView;
 import uk.ac.bris.cs.databases.util.Params;
+import uk.ac.bris.cs.databases.web.ApplicationContext;
 
 /**
  *
@@ -41,6 +42,30 @@ public class API implements APIProvider {
         this.c = c;
     }
 
+    private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
+    public static void main(String[] args){
+      //TESTS
+       
+      ApplicationContext c = ApplicationContext.getInstance();
+
+      APIProvider api;
+      Connection conn;
+      try {
+          conn = DriverManager.getConnection(DATABASE);
+          conn.setAutoCommit(false);
+          api = new API(conn);
+          c.setApi(api);
+      } catch (SQLException e) {
+          throw new RuntimeException(e);
+      }
+
+       api.p("All good in da hood");
+    }
+    @Override
+    public void p(String s){
+       System.out.println(s);
+    }
+    
    //Test with: http://localhost:8000/people
    @Override
    public Result<Map<String, String>> getUsers() {
@@ -95,7 +120,7 @@ public class API implements APIProvider {
          List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
-                                                                     r.getString("name"));
+                                                                     r.getString("title"));
             simpleForumsList.add(sfsv);
          }
          return Result.success(simpleForumsList);
