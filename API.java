@@ -148,7 +148,6 @@ public class API implements APIProvider {
          ResultSet r = s.executeQuery();
 
          String topicTitle = r.getString("title");
-         //Long topicID = r.getLong("topicid");
 
          //Collect post and add to list
          List<SimplePostView> simplePostsList = new ArrayList<>();
