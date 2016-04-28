@@ -88,7 +88,7 @@ public class API implements APIProvider {
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT id, name FROM Forum;"
+               "SELECT id, title FROM Forum;"
             );
          ){
          ResultSet r = s.executeQuery();
@@ -104,8 +104,8 @@ public class API implements APIProvider {
       }
       return Result.fatal("Fatal getSimpleForums");
     }
-    
-    //TEST WITH 
+
+    //TEST WITH
     @Override
     public Result<Integer> countPostsInTopic(long topicId) {
        try{
