@@ -131,7 +131,7 @@ public class API implements APIProvider {
 
          ResultSet r = s.executeQuery();
 
-         List simplePostsList = new ArrayList<SimplePostView>();
+         List<SimplePostView> simplePostsList = new ArrayList<>();
 
          while (r.next()) {                                 // id is not the same as the post number order
             SimplePostView spv = new SimplePostView(r.getInt("postid"),
