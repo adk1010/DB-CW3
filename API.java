@@ -131,8 +131,8 @@ public class API implements APIProvider {
 
          ResultSet r = s.executeQuery();
 
+         //Collect post and add to list
          List<SimplePostView> simplePostsList = new ArrayList<>();
-
          while (r.next()) {                                 // id is not the same as the post number order
             SimplePostView spv = new SimplePostView(r.getInt("postid"),
                                                     r.getString("username"),
@@ -141,8 +141,8 @@ public class API implements APIProvider {
             simplePostsList.add(spv);
          }
 
-         r.first();
-
+         r.first(); //Have to jump back to first??
+         //Create simpleTopicView pass list of posts
          SimpleTopicView stv = new SimpleTopicView(r.getLong("id"),
                                                    r.getString("title"),
                                                    simplePostsList);
