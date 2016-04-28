@@ -121,7 +121,7 @@ public class API implements APIProvider {
       try(
             PreparedStatement s = c.prepareStatement(
                                  // may not need p.id
-               "SELECT t.id, t.title, p.id, per.username, p.text, p.date FROM Topic AS t " +
+               "SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t " +
                "JOIN Post AS p ON t.id = p.topicid " +
                "JOIN Person AS per ON p.authorid = per.id " +
                "WHERE t.id = ?"
@@ -134,17 +134,17 @@ public class API implements APIProvider {
          List simplePostsList = new ArrayList<SimplePostView>();
 
          while (r.next()) {                                 // id is not the same as the post number order
-            SimplePostView spv = new SimplePostView((int) r.getLong("p.id"),
-                                                    r.getString("per.username"),
-                                                    r.getString("p.text"),
-                                                    r.getInt("p.date"));
+            SimplePostView spv = new SimplePostView(r.getInt("postid"),
+                                                    r.getString("username"),
+                                                    r.getString("text"),
+                                                    r.getInt("date"));
             simplePostsList.add(spv);
          }
 
          r.first();
 
-         SimpleTopicView stv = new SimpleTopicView(r.getLong("t.id"),
-                                                   r.getString("t.title"),
+         SimpleTopicView stv = new SimpleTopicView(r.getLong("id"),
+                                                   r.getString("title"),
                                                    simplePostsList);
 
          return Result.success(stv);
