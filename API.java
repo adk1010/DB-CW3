@@ -125,7 +125,11 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    // Test with: http://localhost:8000/topic0/1
+    /* Test with: http://localhost:8000/topic0/1
+       or
+       Test with: http://localhost:8000/topic0/2
+    */
+
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
@@ -140,22 +144,22 @@ public class API implements APIProvider {
          s.setLong(1, topicId);
 
          ResultSet r = s.executeQuery();
-         
+
          String topicTitle = r.getString("title");
-         Long topicID = r.getLong("topicid");
-         
+         //Long topicID = r.getLong("topicid");
+
          //Collect post and add to list
          List<SimplePostView> simplePostsList = new ArrayList<>();
-         while (r.next()) {              
+         while (r.next()) {
             SimplePostView spv = new SimplePostView(r.getInt("postid"),
                                                     r.getString("username"),
                                                     r.getString("text"),
                                                     r.getInt("date"));
             simplePostsList.add(spv);
          }
-   
+
          //Create simpleTopicView pass list of posts
-         SimpleTopicView stv = new SimpleTopicView(topicID,
+         SimpleTopicView stv = new SimpleTopicView(topicId,
                                                    topicTitle,
                                                    simplePostsList);
 
