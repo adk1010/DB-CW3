@@ -137,7 +137,6 @@ public class API implements APIProvider {
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
             PreparedStatement s = c.prepareStatement(
-                                 // may not need p.id
                "SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t " +
                "JOIN Post AS p ON t.id = p.topicid " +
                "JOIN Person AS per ON p.authorid = per.id " +
