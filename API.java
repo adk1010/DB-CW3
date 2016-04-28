@@ -104,8 +104,8 @@ public class API implements APIProvider {
       }
       return Result.fatal("Fatal getSimpleForums");
     }
-    
-    //TEST WITH 
+
+    //TEST WITH
     @Override
     public Result<Integer> countPostsInTopic(long topicId) {
        try{
@@ -178,9 +178,24 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    // Test with: http://localhost:8000/forums
     @Override
     public Result<List<ForumSummaryView>> getForums() {
-        throw new UnsupportedOperationException("Not supported yet.");
+      try(
+   		PreparedStatement s = c.prepareStatement(
+               "SELECT f.id, f. FROM Person;"
+   		);
+         ){
+            Map<String, String> map = new HashMap<>();
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+               map.put(r.getString("username"), r.getString("name"));
+            }
+            return Result.success(map);
+   	}catch (SQLException ex) {
+         printError("Error in getUsers: " + ex.getMessage());
+   	}
+   	return Result.fatal("Fatal getUsers");
     }
 
     @Override
