@@ -28,6 +28,7 @@ import uk.ac.bris.cs.databases.api.SimplePostView; //ALEX JUST ADDED THIS - SHOU
 import uk.ac.bris.cs.databases.api.SimpleTopicView;
 import uk.ac.bris.cs.databases.api.TopicView;
 import uk.ac.bris.cs.databases.util.Params;
+import uk.ac.bris.cs.databases.web.ApplicationContext;
 
 /**
  *
@@ -41,6 +42,29 @@ public class API implements APIProvider {
         this.c = c;
     }
 
+    private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
+    public static void main(String[] args){
+      //SET UP FOR TESTS
+         ApplicationContext c = ApplicationContext.getInstance();
+         APIProvider api;
+         Connection conn;
+         try{
+            conn = DriverManager.getConnection(DATABASE);
+            conn.setAutoCommit(false);
+            api = new API(conn);
+            c.setApi(api);
+         } catch (SQLException e) {
+            throw new RuntimeException(e);
+         }
+
+      //TESTS
+         api.p("All good in da hood");
+    }
+    @Override
+    public void p(String s){
+       System.out.println(s);
+    }
+    
    //Test with: http://localhost:8000/people
    @Override
    public Result<Map<String, String>> getUsers() {
@@ -95,7 +119,7 @@ public class API implements APIProvider {
          List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
-                                                                     r.getString("name"));
+                                                                     r.getString("title"));
             simpleForumsList.add(sfsv);
          }
          return Result.success(simpleForumsList);
@@ -118,7 +142,7 @@ public class API implements APIProvider {
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
-       return Result.fatal("Fatal getSimpleTopic");
+       return Result.fatal("Fatal getPostsInTopic");
     }
 
     @Override
@@ -173,9 +197,36 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getSimpleTopic");
     }
 
+    //testwith: 
     @Override
     public Result<PostView> getLatestPost(long topicId) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try{
+         PreparedStatement s = c.prepareStatement(
+               "SELECT forum.id as forumid, post.topicid as topicid, post.id as postNumber, person.name as authorname, person.username as username, post.text as text, post.date as postedAt, likes.numLikes as numberOfLikes FROM POST" +
+               "JOIN PERSON on post.authorid = person.id" +
+               "JOIN TOPIC on post.topicid = topic.id" +
+               "JOIN FORUM on topic.forumid = forum.id" +
+               "JOIN (SELECT postid, count(*) as numLikes FROM POST_LIKERS GROUP BY postid) as likes ON likes.postid = post.id" +
+               "WHERE topicid = 1" +
+               "ORDER BY postNumber DESC LIMIT 1;"
+            );
+         s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         
+         //PostView(long forumId, long topicId, int postNumber, String authorName, String authorUserName, String text, int postedAt, int likes)
+         PostView pv = new PostView(r.getLong("forumid"),
+                                 r.getLong("topicid"),
+                                 r.getInt("postNumber"),
+                                 r.getString("authorname"),
+                                 r.getString("username"),
+                                 r.getString("text"),
+                                 r.getInt("postedAt"),
+                                 r.getInt("numberOfLikes"));
+         Result.success(pv);
+       }catch(SQLException ex){
+         printError("Error in getSimpleTopic: " + ex.getMessage());
+       }
+       return Result.fatal("Fatal getSimpleTopic");
     }
 
     @Override
