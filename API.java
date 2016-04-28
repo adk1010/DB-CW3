@@ -60,14 +60,20 @@ public class API implements APIProvider {
       //TESTS
          int passed = 0;
          
+         //--getUsers
          if(api.test(api.getUsers(), "success")) passed++;
          else api.p("Failed getUsers");
          
+         //--getPersonView
          if(api.test(api.getPersonView("tb15269"), "success")) passed++;
          else api.p("Failed getPersonView 1");
          
          if(api.test(api.getPersonView("tb1269"), "fatal")) passed++;
          else api.p("Failed getPersonView 2");
+         
+         //--getSimpleForums
+         if(api.test(api.getSimpleForums(), "success")) passed++;
+         else api.p("Failed getUsers");
          
          /*
          we should make database/unitTests.sqlite3 and load that instead of
