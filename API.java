@@ -61,7 +61,13 @@ public class API implements APIProvider {
          int passed = 0;
          
          if(api.test(api.getUsers(), "success")) passed++;
-         else api.p("Failed test 0");
+         else api.p("Failed getUsers");
+         
+         if(api.test(api.getPersonView("tb15269"), "success")) passed++;
+         else api.p("Failed getPersonView 1");
+         
+         if(api.test(api.getPersonView("tb1269"), "fatal")) passed++;
+         else api.p("Failed getPersonView 2");
          
          /*
          we should make database/unitTests.sqlite3 and load that instead of
@@ -115,6 +121,7 @@ public class API implements APIProvider {
                if(r.isFatal()) return true;
                return false;
             default:
+               System.err.println("Test configured incorrectly");
                return false;
          }
        }catch(RuntimeException e){
