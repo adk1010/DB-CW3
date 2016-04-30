@@ -281,6 +281,7 @@ public class API implements APIProvider {
             PreparedStatement s = c.prepareStatement(
                "SELECT COUNT(*) " +
                "FROM Topic " +
+               "WHERE Topic.id = ?"
             );
          ){
          s.setLong(1, topicId);
