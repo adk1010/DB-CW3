@@ -88,14 +88,14 @@ public class API implements APIProvider {
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT id, name FROM Forum;"
+               "SELECT id, title FROM Forum;"
             );
          ){
          ResultSet r = s.executeQuery();
          List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
-                                                                     r.getString("name"));
+                                                                     r.getString("title"));
             simpleForumsList.add(sfsv);
          }
          return Result.success(simpleForumsList);
@@ -104,8 +104,8 @@ public class API implements APIProvider {
       }
       return Result.fatal("Fatal getSimpleForums");
     }
-    
-    //TEST WITH 
+
+    //TEST WITH
     @Override
     public Result<Integer> countPostsInTopic(long topicId) {
        try{
@@ -203,9 +203,26 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    // Test with: http://localhost:8000/forums
     @Override
     public Result<List<ForumSummaryView>> getForums() {
-        throw new UnsupportedOperationException("Not supported yet.");
+      try(
+   		PreparedStatement s = c.prepareStatement(
+               "SELECT f.id, f.title FROM Forum;"
+   		);
+      ){
+         ResultSet r = s.executeQuery();
+         List forumsList = new ArrayList<ForumSummaryView>();
+         while (r.next()) {
+            ForumSummaryView fsv = new ForumSummaryView(r.getString("title"), r.getLong("id"));
+            simpleForumsList.add(sfsv);
+         }
+         return Result.success(forumsList);
+
+      }catch (SQLException ex) {
+         printError("Error in getForums: " + ex.getMessage());
+      }
+      return Result.fatal("Fatal getForums");
     }
 
     @Override
