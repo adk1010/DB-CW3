@@ -101,16 +101,15 @@ public class API implements APIProvider {
          we should make database/unitTests.sqlite3 and load that instead of
          one that will keep changing as we play with the forum.
          
-         DONE getUsers()
+         getUsers()
          getPersonView(String username)
          getSimpleForums()
-         
          countPostsInTopic(long topicId)
          getLikers(long topicId)
-         getSimpleTopic(long topicId)
-         
+         getSimpleTopic(long topicId)     
          //Level 2
          getLatestPost(long topicId)
+         
          getForums()
          createForum(String title)
          createPost(long topicId, String username, String text)
@@ -119,7 +118,6 @@ public class API implements APIProvider {
          getTopic(long topicId, int page)
          likeTopic(String username, long topicId, boolean like)
          favouriteTopic(String username, long topicId, boolean fav)
-         
          //LEVEL 3
          createTopic(long forumId, String username, String title, String text)
          getAdvancedForums()
@@ -295,12 +293,12 @@ public class API implements APIProvider {
     public Result<PostView> getLatestPost(long topicId) {
        try{
          PreparedStatement s = c.prepareStatement(
-               "SELECT forum.id as forumid, post.topicid as topicid, post.id as postNumber, person.name as authorname, person.username as username, post.text as text, post.date as postedAt, likes.numLikes as numberOfLikes FROM POST" +
-               "JOIN PERSON on post.authorid = person.id" +
-               "JOIN TOPIC on post.topicid = topic.id" +
-               "JOIN FORUM on topic.forumid = forum.id" +
-               "JOIN (SELECT postid, count(*) as numLikes FROM POST_LIKERS GROUP BY postid) as likes ON likes.postid = post.id" +
-               "WHERE topicid = 1" +
+               "SELECT forum.id as forumid, post.topicid as topicid, post.id as postNumber, person.name as authorname, person.username as username, post.text as text, post.date as postedAt, likes.numLikes as numberOfLikes FROM Post" +
+               "JOIN Person ON Post.authorid = Person.id" +
+               "JOIN Topic ON Post.topicid = Topic.id" +
+               "JOIN Forum ON Topic.forumid = Forum.id" +
+               "JOIN (SELECT postid, count(*) as numLikes FROM Post_Likers GROUP BY postid) as Likes ON Likes.postid = Post.id" +
+               "WHERE topicid = ?" +
                "ORDER BY postNumber DESC LIMIT 1;"
             );
          s.setLong(1, topicId);
