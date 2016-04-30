@@ -75,6 +75,28 @@ public class API implements APIProvider {
          if(api.test(api.getSimpleForums(), "success")) passed++;
          else api.p("Failed getUsers");
          
+         //--countPostsInTopic
+         if(api.test(api.countPostsInTopic(1), "success")) passed++;
+         else api.p("Failed countPostsInTopic");
+         
+         //--getLikers
+         //if(api.test(api.getLikers(1), "success")) passed++;
+         //else api.p("Failed countPostsInTopic");
+         
+         //--getSimpleTopic
+         if(api.test(api.getSimpleTopic(1), "success")) passed++;
+         else api.p("Failed getSimpleTopic1");
+         
+         if(api.test(api.getSimpleTopic(100), "failure")) api.p("Failed getSimpleTopic2");
+         else passed++; 
+         
+         //--getLatestPost
+         if(api.test(api.getLatestPost(1), "success")) passed++;
+         else api.p("Failed getLatestPost1");
+         
+         if(api.test(api.getLatestPost(100), "failure")) api.p("Failed getLatestPost2");
+         else passed++; 
+         
          /*
          we should make database/unitTests.sqlite3 and load that instead of
          one that will keep changing as we play with the forum.
@@ -82,6 +104,7 @@ public class API implements APIProvider {
          DONE getUsers()
          getPersonView(String username)
          getSimpleForums()
+         
          countPostsInTopic(long topicId)
          getLikers(long topicId)
          getSimpleTopic(long topicId)
