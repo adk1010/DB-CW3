@@ -207,7 +207,7 @@ public class API implements APIProvider {
             );
          ){
          ResultSet r = s.executeQuery();
-         List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
+         List<SimpleForumSummaryView> simpleForumsList = new ArrayList<>();
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
                                                                      r.getString("title"));
