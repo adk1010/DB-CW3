@@ -88,32 +88,31 @@ public class API implements APIProvider {
          if(api.test(api.getSimpleTopic(1), "success")) passed++;
          else {api.p("Failed getSimpleTopic1"); failed++; }
          
-         if(api.test(api.getSimpleTopic(100), "failure")) {api.p("Failed getSimpleTopic2"); failed++; }
-         else passed++; 
+         if(api.test(api.getSimpleTopic(100), "fatal")) passed++;
+         else {api.p("Failed getSimpleTopic2"); failed++; }
          
          //--getLatestPost
          if(api.test(api.getLatestPost(1), "success")) passed++;
          else {api.p("Failed getLatestPost1"); failed++; }
          
-         if(api.test(api.getLatestPost(100), "failure")) {api.p("Failed getLatestPost2"); failed++; }
-         else passed++; 
+         if(api.test(api.getLatestPost(100), "fatal")) passed++;
+         else {api.p("Failed getLatestPost2"); failed++; }
          
         //--getForums
         
         //--createForum
         //NEED TO DELETE FORUM TEST
-        
          if(api.test(api.createForum("test"), "success")) passed++;
          else {api.p("Failed createForum1 - simple create test"); failed++; }
          
-         if(api.test(api.createForum("Politics"), "failure")) {api.p("Failed createForum2 - creating duplicate"); failed++; }
-         else passed++; 
+         if(api.test(api.createForum("Politics"), "failure")) passed++;
+         else {api.p("Failed createForum2 - creating duplicate"); failed++; }
          
-         if(api.test(api.createForum(null), "failure")) {api.p("Failed createForum3 - create with null title"); failed++; }
-         else passed++; 
+         if(api.test(api.createForum(null), "failure")) passed++;
+         else {api.p("Failed createForum3 - create with null title"); failed++; }
          
-         if(api.test(api.createForum(""), "failure")) {api.p("Failed createForum4 - create with empty title"); failed++; }
-         else passed++; 
+         if(api.test(api.createForum(""), "failure")) passed++;
+         else {api.p("Failed createForum4 - create with empty title"); failed++; }
          
          /*
          we should make database/unitTests.sqlite3 and load that instead of
@@ -358,22 +357,24 @@ public class API implements APIProvider {
     public Result createForum(String title) {
        try(
             PreparedStatement createStatement = c.prepareStatement(
-               "INSERT INTO Forum (title) VALUES (?)"
+               "INSERT INTO Forum (title) VALUES (?);"
             );
          ){
          if(title == null) throw new RuntimeException("Cannot have forum with null title");
          if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
          createStatement.setString(1, title);
          Boolean r = createStatement.execute();
-         if(!r) throw new RuntimeException("Forum already exists");
+         if(!r) {
+            throw new RuntimeException("Forum already exists");
+         }
          return Result.success();
       }catch (SQLException ex) {
-         printError("Error in createForum: " + ex.getMessage());
-         printError("errorCode: " + ex.getErrorCode() + "SQL State: " + ex.getSQLState()); //how do I catch that the forum naame already existed?
+         if(ex.getLocalizedMessage().contains("NIQUE constraint failed: Forum.title"))
+            return Result.failure(ex.getMessage());
+         else return Result.fatal(ex.getMessage()); 
       }catch (RuntimeException ex){
          return Result.failure(ex.getMessage());
       }
-      return Result.fatal("Fatal createForum");
     }
 
     @Override
