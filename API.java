@@ -98,6 +98,23 @@ public class API implements APIProvider {
          if(api.test(api.getLatestPost(100), "failure")) {api.p("Failed getLatestPost2"); failed++; }
          else passed++; 
          
+        //--getForums
+        
+        //--createForum
+        //NEED TO DELETE FORUM TEST
+        
+         if(api.test(api.createForum("test"), "success")) passed++;
+         else {api.p("Failed createForum1 - simple create test"); failed++; }
+         
+         if(api.test(api.createForum("Politics"), "failure")) {api.p("Failed createForum2 - creating duplicate"); failed++; }
+         else passed++; 
+         
+         if(api.test(api.createForum(null), "failure")) {api.p("Failed createForum3 - create with null title"); failed++; }
+         else passed++; 
+         
+         if(api.test(api.createForum(""), "failure")) {api.p("Failed createForum4 - create with empty title"); failed++; }
+         else passed++; 
+         
          /*
          we should make database/unitTests.sqlite3 and load that instead of
          one that will keep changing as we play with the forum.
@@ -339,7 +356,23 @@ public class API implements APIProvider {
      */
     @Override
     public Result createForum(String title) {
-       
+       try(
+            PreparedStatement createStatement = c.prepareStatement(
+               "INSERT INTO Forum (title) VALUES (?)"
+            );
+         ){
+         if(title == null) throw new RuntimeException("Cannot have forum with null title");
+         if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
+         createStatement.setString(1, title);
+         ResultSet r = createStatement.executeQuery();
+         return Result.success();
+      }catch (SQLException ex) {
+         printError("Error in createForum: " + ex.getMessage());
+         printError("errorCode: " + ex.getErrorCode() + "SQL State: " + ex.getSQLState());
+      }catch (RuntimeException ex){
+         return Result.failure(ex.getMessage());
+      }
+      return Result.fatal("Fatal createForum");
     }
 
     @Override
