@@ -368,7 +368,7 @@ public class API implements APIProvider {
          return Result.success();
       }catch (SQLException ex) {
          printError("Error in createForum: " + ex.getMessage());
-         printError("errorCode: " + ex.getErrorCode() + "SQL State: " + ex.getSQLState());
+         printError("errorCode: " + ex.getErrorCode() + "SQL State: " + ex.getSQLState()); //how do I catch that the forum naame already existed?
       }catch (RuntimeException ex){
          return Result.failure(ex.getMessage());
       }
