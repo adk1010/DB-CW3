@@ -317,7 +317,7 @@ public class API implements APIProvider {
                                     r.getString("text"),
                                     r.getInt("postedAt"),
                                     r.getInt("numberOfLikes"));
-         Result.success(pv);
+         return Result.success(pv);
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
