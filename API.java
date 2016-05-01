@@ -58,11 +58,103 @@ public class API implements APIProvider {
          }
 
       //TESTS
-         api.p("All good in da hood");
+         int passed = 0;
+         int failed = 0;
+         
+         //--getUsers
+         if(api.test(api.getUsers(), "success")) passed++;
+         else {api.p("Failed getUsers"); failed++; }
+         
+         //--getPersonView
+         if(api.test(api.getPersonView("tb15269"), "success")) passed++;
+         else {api.p("Failed getPersonView 1"); failed++; }
+         
+         if(api.test(api.getPersonView("tb1269"), "fatal")) passed++;
+         else {api.p("Failed getPersonView 2"); failed++; }
+         
+         //--getSimpleForums
+         if(api.test(api.getSimpleForums(), "success")) passed++;
+         else {api.p("Failed getUsers"); failed++; }
+         
+         //--countPostsInTopic
+         if(api.test(api.countPostsInTopic(1), "success")) passed++;
+         else {api.p("Failed countPostsInTopic"); failed++; }
+         
+         //--getLikers
+         //if(api.test(api.getLikers(1), "success")) passed++;
+         //else {api.p("Failed countPostsInTopic"); failed++; }
+         
+         //--getSimpleTopic
+         if(api.test(api.getSimpleTopic(1), "success")) passed++;
+         else {api.p("Failed getSimpleTopic1"); failed++; }
+         
+         if(api.test(api.getSimpleTopic(100), "failure")) {api.p("Failed getSimpleTopic2"); failed++; }
+         else passed++; 
+         
+         //--getLatestPost
+         if(api.test(api.getLatestPost(1), "success")) passed++;
+         else {api.p("Failed getLatestPost1"); failed++; }
+         
+         if(api.test(api.getLatestPost(100), "failure")) {api.p("Failed getLatestPost2"); failed++; }
+         else passed++; 
+         
+         /*
+         we should make database/unitTests.sqlite3 and load that instead of
+         one that will keep changing as we play with the forum.
+         
+         getUsers()
+         getPersonView(String username)
+         getSimpleForums()
+         countPostsInTopic(long topicId)
+         getLikers(long topicId)
+         getSimpleTopic(long topicId)     
+         //Level 2
+         getLatestPost(long topicId)
+         
+         getForums()
+         createForum(String title)
+         createPost(long topicId, String username, String text)
+         addNewPerson(String name, String username, String studentId)
+         getForum(long id)
+         getTopic(long topicId, int page)
+         likeTopic(String username, long topicId, boolean like)
+         favouriteTopic(String username, long topicId, boolean fav)
+         //LEVEL 3
+         createTopic(long forumId, String username, String title, String text)
+         getAdvancedForums()
+         getAdvancedPersonView(String username)
+         getAdvancedForum(long id)
+         likePost(String username, long topicId, int post, boolean like)
+         */
+         
+         api.p("Passed " + passed + " tests. Failed " + failed);
     }
+    
     @Override
     public void p(String s){
        System.out.println(s);
+    }
+    
+    @Override
+    public boolean test(Result r, String expectedResult){
+       try{
+         switch(expectedResult){
+            case "success":
+               if(r.isSuccess()) return true;
+               return false;
+            case "failure":
+               if(!r.isFatal()) return true; //isFatal returns false if is failiure, exception if success, true if fatal
+               return false;
+            case "fatal":
+               if(r.isFatal()) return true;
+               return false;
+            default:
+               System.err.println("Test configured incorrectly");
+               return false;
+         }
+       }catch(RuntimeException e){
+          return false;
+       }
     }
     
    //Test with: http://localhost:8000/people
@@ -116,7 +208,7 @@ public class API implements APIProvider {
             );
          ){
          ResultSet r = s.executeQuery();
-         List simpleForumsList = new ArrayList<SimpleForumSummaryView>();
+         List<SimpleForumSummaryView> simpleForumsList = new ArrayList<>();
          while (r.next()) {
             SimpleForumSummaryView sfsv = new SimpleForumSummaryView(r.getLong("id"),
                                                                      r.getString("title"));
@@ -138,7 +230,7 @@ public class API implements APIProvider {
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         Result.success(r.getInt("numposts"));
+         return Result.success(r.getInt("numposts"));
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
@@ -202,12 +294,16 @@ public class API implements APIProvider {
     public Result<PostView> getLatestPost(long topicId) {
        try{
          PreparedStatement s = c.prepareStatement(
-               "SELECT forum.id as forumid, post.topicid as topicid, post.id as postNumber, person.name as authorname, person.username as username, post.text as text, post.date as postedAt, likes.numLikes as numberOfLikes FROM POST" +
-               "JOIN PERSON on post.authorid = person.id" +
-               "JOIN TOPIC on post.topicid = topic.id" +
-               "JOIN FORUM on topic.forumid = forum.id" +
-               "JOIN (SELECT postid, count(*) as numLikes FROM POST_LIKERS GROUP BY postid) as likes ON likes.postid = post.id" +
-               "WHERE topicid = 1" +
+               "SELECT forum.id as forumid,         post.topicid as topicid, " + 
+                      "post.id as postNumber,       person.name as authorname, " +
+                      "person.username as username, post.text as text, " + 
+                      "post.date as postedAt,       likes.numLikes as numberOfLikes " +
+                      "FROM Post " +
+               "JOIN Person ON Post.authorid = Person.id " +
+               "JOIN Topic ON Post.topicid = Topic.id " +
+               "JOIN Forum ON Topic.forumid = Forum.id " +
+               "JOIN (SELECT postid, count(*) as numLikes FROM Post_Likers GROUP BY postid) as Likes ON Likes.postid = Post.id " +
+               "WHERE topicid = ? " +
                "ORDER BY postNumber DESC LIMIT 1;"
             );
          s.setLong(1, topicId);
@@ -215,14 +311,14 @@ public class API implements APIProvider {
          
          //PostView(long forumId, long topicId, int postNumber, String authorName, String authorUserName, String text, int postedAt, int likes)
          PostView pv = new PostView(r.getLong("forumid"),
-                                 r.getLong("topicid"),
-                                 r.getInt("postNumber"),
-                                 r.getString("authorname"),
-                                 r.getString("username"),
-                                 r.getString("text"),
-                                 r.getInt("postedAt"),
-                                 r.getInt("numberOfLikes"));
-         Result.success(pv);
+                                    r.getLong("topicid"),
+                                    r.getInt("postNumber"),
+                                    r.getString("authorname"),
+                                    r.getString("username"),
+                                    r.getString("text"),
+                                    r.getInt("postedAt"),
+                                    r.getInt("numberOfLikes"));
+         return Result.success(pv);
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
