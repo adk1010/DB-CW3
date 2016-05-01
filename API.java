@@ -59,42 +59,43 @@ public class API implements APIProvider {
 
       //TESTS
          int passed = 0;
+         int failed = 0;
          
          //--getUsers
          if(api.test(api.getUsers(), "success")) passed++;
-         else api.p("Failed getUsers");
+         else {api.p("Failed getUsers"); failed++; }
          
          //--getPersonView
          if(api.test(api.getPersonView("tb15269"), "success")) passed++;
-         else api.p("Failed getPersonView 1");
+         else {api.p("Failed getPersonView 1"); failed++; }
          
          if(api.test(api.getPersonView("tb1269"), "fatal")) passed++;
-         else api.p("Failed getPersonView 2");
+         else {api.p("Failed getPersonView 2"); failed++; }
          
          //--getSimpleForums
          if(api.test(api.getSimpleForums(), "success")) passed++;
-         else api.p("Failed getUsers");
+         else {api.p("Failed getUsers"); failed++; }
          
          //--countPostsInTopic
          if(api.test(api.countPostsInTopic(1), "success")) passed++;
-         else api.p("Failed countPostsInTopic");
+         else {api.p("Failed countPostsInTopic"); failed++; }
          
          //--getLikers
          //if(api.test(api.getLikers(1), "success")) passed++;
-         //else api.p("Failed countPostsInTopic");
+         //else {api.p("Failed countPostsInTopic"); failed++; }
          
          //--getSimpleTopic
          if(api.test(api.getSimpleTopic(1), "success")) passed++;
-         else api.p("Failed getSimpleTopic1");
+         else {api.p("Failed getSimpleTopic1"); failed++; }
          
-         if(api.test(api.getSimpleTopic(100), "failure")) api.p("Failed getSimpleTopic2");
+         if(api.test(api.getSimpleTopic(100), "failure")) {api.p("Failed getSimpleTopic2"); failed++; }
          else passed++; 
          
          //--getLatestPost
          if(api.test(api.getLatestPost(1), "success")) passed++;
-         else api.p("Failed getLatestPost1");
+         else {api.p("Failed getLatestPost1"); failed++; }
          
-         if(api.test(api.getLatestPost(100), "failure")) api.p("Failed getLatestPost2");
+         if(api.test(api.getLatestPost(100), "failure")) {api.p("Failed getLatestPost2"); failed++; }
          else passed++; 
          
          /*
@@ -126,7 +127,7 @@ public class API implements APIProvider {
          likePost(String username, long topicId, int post, boolean like)
          */
          
-         api.p("Passed " + passed + " tests");
+         api.p("Passed " + passed + " tests. Failed " + failed);
     }
     
     @Override
