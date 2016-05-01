@@ -60,7 +60,7 @@ public class API implements APIProvider {
       //TESTS
          api.tests();
     }
-    
+
     @Override
     public void tests(){
       int passed = 0;
@@ -109,7 +109,7 @@ public class API implements APIProvider {
       if(test(createForum("test"), "success")) passed++;
       else {p("Failed createForum1 - simple create test"); failed++; }
       deleteForum("test");
-      
+
       if(test(createForum("Politics"), "failure")) passed++;
       else {p("Failed createForum2 - creating duplicate"); failed++; }
 
@@ -128,7 +128,7 @@ public class API implements APIProvider {
       getSimpleForums()
       countPostsInTopic(long topicId)
       getLikers(long topicId)
-      getSimpleTopic(long topicId)     
+      getSimpleTopic(long topicId)
       //Level 2
       getLatestPost(long topicId)
 
@@ -150,11 +150,11 @@ public class API implements APIProvider {
 
       p("Passed " + passed + " tests. Failed " + failed);
     }
-    
+
     private void p(String s){
        System.out.println(s);
     }
-    
+
     private boolean test(Result r, String expectedResult){
        try{
          switch(expectedResult){
@@ -175,7 +175,7 @@ public class API implements APIProvider {
           return false;
        }
     }
-    
+
    //Test with: http://localhost:8000/people
    @Override
    public Result<Map<String, String>> getUsers() {
@@ -308,14 +308,14 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getSimpleTopic");
     }
 
-    //testwith: 
+    //testwith:
     @Override
     public Result<PostView> getLatestPost(long topicId) {
        try{
          PreparedStatement s = c.prepareStatement(
-               "SELECT forum.id as forumid,         post.topicid as topicid, " + 
+               "SELECT forum.id as forumid,         post.topicid as topicid, " +
                       "post.id as postNumber,       person.name as authorname, " +
-                      "person.username as username, post.text as text, " + 
+                      "person.username as username, post.text as text, " +
                       "post.date as postedAt,       likes.numLikes as numberOfLikes " +
                       "FROM Post " +
                "JOIN Person ON Post.authorid = Person.id " +
@@ -327,7 +327,7 @@ public class API implements APIProvider {
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         
+
          //PostView(long forumId, long topicId, int postNumber, String authorName, String authorUserName, String text, int postedAt, int likes)
          PostView pv = new PostView(r.getLong("forumid"),
                                     r.getLong("topicid"),
@@ -353,6 +353,7 @@ public class API implements APIProvider {
      * @return success if the forum was created, failure if the title was
      * null, empty or such a forum already existed; fatal on other errors.
      */
+    // Test with: http://localhost:8000/newforum
     @Override
     public Result createForum(String title) {
        try( PreparedStatement createStatement = c.prepareStatement(
@@ -368,12 +369,12 @@ public class API implements APIProvider {
       }catch (SQLException ex) {
          if(ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title"))
             return Result.failure(ex.getMessage());
-         else return Result.fatal(ex.getMessage()); 
+         else return Result.fatal(ex.getMessage());
       }catch (RuntimeException ex){
          return Result.failure(ex.getMessage());
       }
     }
-    
+
     //just for the tests
     private void deleteForum(String title) {
        try( PreparedStatement createStatement = c.prepareStatement(
