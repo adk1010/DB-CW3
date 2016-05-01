@@ -229,7 +229,7 @@ public class API implements APIProvider {
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         Result.success(r.getInt("numposts"));
+         return Result.success(r.getInt("numposts"));
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
