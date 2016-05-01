@@ -355,18 +355,15 @@ public class API implements APIProvider {
      */
     @Override
     public Result createForum(String title) {
-       try(
-            PreparedStatement createStatement = c.prepareStatement(
+       try( PreparedStatement createStatement = c.prepareStatement(
                "INSERT INTO Forum (title) VALUES (?);"
             );
          ){
          if(title == null) throw new RuntimeException("Cannot have forum with null title");
          if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
          createStatement.setString(1, title);
-         Boolean r = createStatement.execute();
-         if(!r) {
-            throw new RuntimeException("Forum already exists");
-         }
+         createStatement.executeUpdate();
+         c.commit();
          return Result.success();
       }catch (SQLException ex) {
          if(ex.getLocalizedMessage().contains("NIQUE constraint failed: Forum.title"))
