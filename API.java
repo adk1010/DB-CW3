@@ -330,9 +330,16 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * Create a new forum.
+     * @param title - the title of the forum. Must not be null or empty and
+     * no forum with this name must exist yet.
+     * @return success if the forum was created, failure if the title was
+     * null, empty or such a forum already existed; fatal on other errors.
+     */
     @Override
     public Result createForum(String title) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       
     }
 
     @Override
