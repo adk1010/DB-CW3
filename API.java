@@ -364,7 +364,8 @@ public class API implements APIProvider {
          if(title == null) throw new RuntimeException("Cannot have forum with null title");
          if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
          createStatement.setString(1, title);
-         ResultSet r = createStatement.executeQuery();
+         Boolean r = createStatement.execute();
+         if(!r) throw new RuntimeException("Forum already exists");
          return Result.success();
       }catch (SQLException ex) {
          printError("Error in createForum: " + ex.getMessage());
