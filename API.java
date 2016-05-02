@@ -14,19 +14,7 @@ import java.sql.*;
 import java.util.*;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
-import uk.ac.bris.cs.databases.api.APIProvider;
-import uk.ac.bris.cs.databases.api.AdvancedForumSummaryView;
-import uk.ac.bris.cs.databases.api.AdvancedForumView;
-import uk.ac.bris.cs.databases.api.ForumSummaryView;
-import uk.ac.bris.cs.databases.api.ForumView;
-import uk.ac.bris.cs.databases.api.AdvancedPersonView;
-import uk.ac.bris.cs.databases.api.PostView;
-import uk.ac.bris.cs.databases.api.Result;
-import uk.ac.bris.cs.databases.api.PersonView;
-import uk.ac.bris.cs.databases.api.SimpleForumSummaryView;
-import uk.ac.bris.cs.databases.api.SimplePostView; //ALEX JUST ADDED THIS - SHOULD WE NEED TO BE DOING THIS?
-import uk.ac.bris.cs.databases.api.SimpleTopicView;
-import uk.ac.bris.cs.databases.api.TopicView;
+import uk.ac.bris.cs.databases.api.*;
 import uk.ac.bris.cs.databases.util.Params;
 import uk.ac.bris.cs.databases.web.ApplicationContext;
 
@@ -343,7 +331,12 @@ public class API implements APIProvider {
        }
        return Result.fatal("Fatal getSimpleTopic");
     }
+
+
+
 /*
+.header on
+.mode column
 SELECT f.title, lastTopic.title, lastTopic.date
 FROM Forum AS f
 JOIN (
@@ -354,7 +347,8 @@ JOIN (
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
 
-
+.header on
+.mode column
 SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
 FROM Forum AS f
 JOIN (
@@ -371,7 +365,15 @@ GROUP BY f.title;
     public Result<List<ForumSummaryView>> getForums() {
       try(
    		PreparedStatement s = c.prepareStatement(
-            //   "SELECT f.id, f.title FROM Forum;"
+         "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id" +
+         "FROM Forum AS f" +
+         "JOIN (" +
+         "   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, t.forumid, p.date AS date" +
+         "   FROM Topic t" +
+         "   JOIN Post AS p ON t.id = p.topicid" +
+         "   GROUP BY p.date" +
+         ") AS lastTopic ON f.id = lastTopic.forumid" +
+         "GROUP BY f.title;"
    		);
       ){
          ResultSet r = s.executeQuery();
@@ -383,10 +385,10 @@ GROUP BY f.title;
                                                                           r.getString("topicTitle"));
 
 
-            ForumSummaryView fsv = new ForumSummaryView(r.getString("title"),
-                                                        r.getLong("id"),
-                                                        lastTopic); //
-            simpleForumsList.add(sfsv);
+            ForumSummaryView fsv = new ForumSummaryView(r.getLong("id"),
+                                                        r.getString("title"),
+                                                        lastTopic);
+            forumsList.add(fsv);
          }
          return Result.success(forumsList);
 
