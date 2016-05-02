@@ -343,10 +343,57 @@ public class API implements APIProvider {
        }
        return Result.fatal("Fatal getSimpleTopic");
     }
+/*
+SELECT f.title, lastTopic.title, lastTopic.date
+FROM Forum AS f
+JOIN (
+   SELECT t.title AS title, t.forumid, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
 
+
+SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+FROM Forum AS f
+JOIN (
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, t.forumid, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
+     */
+
+    // Test with: http://localhost:8000/forums
     @Override
     public Result<List<ForumSummaryView>> getForums() {
-        throw new UnsupportedOperationException("Not supported yet.");
+      try(
+   		PreparedStatement s = c.prepareStatement(
+            //   "SELECT f.id, f.title FROM Forum;"
+   		);
+      ){
+         ResultSet r = s.executeQuery();
+         List<ForumSummaryView> forumsList = new ArrayList<>();
+
+         while (r.next()) {
+            SimpleTopicSummaryView lastTopic = new SimpleTopicSummaryView(r.getLong("topicid"),
+                                                                          r.getLong("topicForumid"),
+                                                                          r.getString("topicTitle"));
+
+
+            ForumSummaryView fsv = new ForumSummaryView(r.getString("title"),
+                                                        r.getLong("id"),
+                                                        lastTopic); //
+            simpleForumsList.add(sfsv);
+         }
+         return Result.success(forumsList);
+
+      }catch (SQLException ex) {
+         printError("Error in getForums: " + ex.getMessage());
+      }
+      return Result.fatal("Fatal getForums");
     }
 
     /**
