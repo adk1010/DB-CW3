@@ -483,6 +483,30 @@ http://localhost:8000/forums
        }
     }
 
+    c.commit();
+  return Result.success();
+ }
+ catch (SQLException ex){
+    System.out.println("SQLException in createTopic: " + ex.getLocalizedMessage());
+    try{
+      c.rollback();
+    }
+    catch(SQLException e){
+      System.err.println("Rollback Error");
+      throw new RuntimeException("Rollback Error");
+    }
+    return Result.failure("create topic failed");
+ } catch(RuntimeException ex){
+    try{
+      c.rollback();
+    }
+    catch(SQLException e){
+      System.err.println("Rollback Error");
+      throw new RuntimeException("Rollback Error");
+    }
+    return Result.failure("create topic failed");
+ }
+
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
         throw new UnsupportedOperationException("Not supported yet.");
