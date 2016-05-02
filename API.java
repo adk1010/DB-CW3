@@ -31,13 +31,15 @@ public class API implements APIProvider {
     }
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-    public static void main(String[] args){
+    public static void main(String[] args){       
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
          APIProvider api;
          Connection conn;
          try{
-            conn = DriverManager.getConnection(DATABASE);
+            Properties properties = new Properties();
+            properties.setProperty("PRAGMA foreign_keys", "ON");
+            conn = DriverManager.getConnection(DATABASE, properties);
             conn.setAutoCommit(false);
             api = new API(conn);
             c.setApi(api);
