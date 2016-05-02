@@ -335,6 +335,7 @@ public class API implements APIProvider {
 
 
 /*
+SHORTER VERSION OF THE QUERY - IGNORE 
 .header on
 .mode column
 SELECT f.title, lastTopic.title, lastTopic.date
@@ -347,6 +348,8 @@ JOIN (
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
 
+
+QUERY BELOW WORKS IN OUR DATABASE
 .header on
 .mode column
 SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
@@ -368,10 +371,10 @@ GROUP BY f.title;
          "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id" +
          "FROM Forum AS f" +
          "JOIN (" +
-         "   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, t.forumid, p.date AS date" +
-         "   FROM Topic t" +
-         "   JOIN Post AS p ON t.id = p.topicid" +
-         "   GROUP BY p.date" +
+            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, t.forumid, p.date AS date" +
+            "FROM Topic t" +
+            "JOIN Post AS p ON t.id = p.topicid" +
+            "GROUP BY p.date" +
          ") AS lastTopic ON f.id = lastTopic.forumid" +
          "GROUP BY f.title;"
    		);
@@ -385,8 +388,10 @@ GROUP BY f.title;
                                                                           r.getString("topicTitle"));
 
 
+            //SimpleTopicSummaryView dummy = new SimpleTopicSummaryView(12, 222, "dummy");
+
             ForumSummaryView fsv = new ForumSummaryView(r.getLong("id"),
-                                                        r.getString("title"),
+                                                        r.getString("title"),// dummy);
                                                         lastTopic);
             forumsList.add(fsv);
          }
