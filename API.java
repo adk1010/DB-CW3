@@ -483,6 +483,21 @@ http://localhost:8000/forums
        }
     }
 
+    /*
+   try (PreparedStatement p  = ...) {
+   // do stuff
+   c.commit();
+   }
+   catch (SQLException e) {
+   try {
+   c.rollback();
+   }
+   catch (SQLException f) {
+   // handle rollback exception
+   }
+   // handle main exception
+   }
+
     c.commit();
   return Result.success();
  }
@@ -506,6 +521,7 @@ http://localhost:8000/forums
     }
     return Result.failure("create topic failed");
  }
+*/
 
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
