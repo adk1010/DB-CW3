@@ -12,6 +12,8 @@ package uk.ac.bris.cs.databases.cwk3;
 import java.sql.*;
 //import java.util.List;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 import uk.ac.bris.cs.databases.api.*;
@@ -49,6 +51,13 @@ public class API implements APIProvider {
 
       //TESTS
          api.tests();
+         
+      //Close connection   
+       try {
+          conn.close();
+       } catch (SQLException ex) {
+          System.err.println("Can't close DB");
+       }
     }
 
     @Override
