@@ -12,21 +12,12 @@ package uk.ac.bris.cs.databases.cwk3;
 import java.sql.*;
 //import java.util.List;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.sqlite.SQLiteConfig;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
-import uk.ac.bris.cs.databases.api.APIProvider;
-import uk.ac.bris.cs.databases.api.AdvancedForumSummaryView;
-import uk.ac.bris.cs.databases.api.AdvancedForumView;
-import uk.ac.bris.cs.databases.api.ForumSummaryView;
-import uk.ac.bris.cs.databases.api.ForumView;
-import uk.ac.bris.cs.databases.api.AdvancedPersonView;
-import uk.ac.bris.cs.databases.api.PostView;
-import uk.ac.bris.cs.databases.api.Result;
-import uk.ac.bris.cs.databases.api.PersonView;
-import uk.ac.bris.cs.databases.api.SimpleForumSummaryView;
-import uk.ac.bris.cs.databases.api.SimplePostView; //ALEX JUST ADDED THIS - SHOULD WE NEED TO BE DOING THIS?
-import uk.ac.bris.cs.databases.api.SimpleTopicView;
-import uk.ac.bris.cs.databases.api.TopicView;
+import uk.ac.bris.cs.databases.api.*;
 import uk.ac.bris.cs.databases.util.Params;
 import uk.ac.bris.cs.databases.web.ApplicationContext;
 
@@ -43,14 +34,17 @@ public class API implements APIProvider {
     }
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-    public static void main(String[] args){
+    public static void main(String[] args){       
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
          APIProvider api;
          Connection conn;
-         try{
-            conn = DriverManager.getConnection(DATABASE);
+         try{            
+            SQLiteConfig config = new SQLiteConfig();  
+            config.enforceForeignKeys(true);  
+            conn = DriverManager.getConnection(DATABASE, config.toProperties());  
             conn.setAutoCommit(false);
+
             api = new API(conn);
             c.setApi(api);
          } catch (SQLException e) {
@@ -58,84 +52,124 @@ public class API implements APIProvider {
          }
 
       //TESTS
-         int passed = 0;
+         api.tests();
          
-         //--getUsers
-         if(api.test(api.getUsers(), "success")) passed++;
-         else api.p("Failed getUsers");
-         
-         //--getPersonView
-         if(api.test(api.getPersonView("tb15269"), "success")) passed++;
-         else api.p("Failed getPersonView 1");
-         
-         if(api.test(api.getPersonView("tb1269"), "fatal")) passed++;
-         else api.p("Failed getPersonView 2");
-         
-         //--getSimpleForums
-         if(api.test(api.getSimpleForums(), "success")) passed++;
-         else api.p("Failed getUsers");
-         
-         //--countPostsInTopic
-         if(api.test(api.countPostsInTopic(1), "success")) passed++;
-         else api.p("Failed countPostsInTopic");
-         
-         //--getLikers
-         //if(api.test(api.getLikers(1), "success")) passed++;
-         //else api.p("Failed countPostsInTopic");
-         
-         //--getSimpleTopic
-         if(api.test(api.getSimpleTopic(1), "success")) passed++;
-         else api.p("Failed getSimpleTopic1");
-         
-         if(api.test(api.getSimpleTopic(100), "failure")) api.p("Failed getSimpleTopic2");
-         else passed++; 
-         
-         //--getLatestPost
-         if(api.test(api.getLatestPost(1), "success")) passed++;
-         else api.p("Failed getLatestPost1");
-         
-         if(api.test(api.getLatestPost(100), "failure")) api.p("Failed getLatestPost2");
-         else passed++; 
-         
-         /*
-         we should make database/unitTests.sqlite3 and load that instead of
-         one that will keep changing as we play with the forum.
-         
-         getUsers()
-         getPersonView(String username)
-         getSimpleForums()
-         countPostsInTopic(long topicId)
-         getLikers(long topicId)
-         getSimpleTopic(long topicId)     
-         //Level 2
-         getLatestPost(long topicId)
-         
-         getForums()
-         createForum(String title)
-         createPost(long topicId, String username, String text)
-         addNewPerson(String name, String username, String studentId)
-         getForum(long id)
-         getTopic(long topicId, int page)
-         likeTopic(String username, long topicId, boolean like)
-         favouriteTopic(String username, long topicId, boolean fav)
-         //LEVEL 3
-         createTopic(long forumId, String username, String title, String text)
-         getAdvancedForums()
-         getAdvancedPersonView(String username)
-         getAdvancedForum(long id)
-         likePost(String username, long topicId, int post, boolean like)
-         */
-         
-         api.p("Passed " + passed + " tests");
+      //Close connection   
+       try {
+          conn.close();
+       } catch (SQLException ex) {
+          System.err.println("Can't close DB");
+       }
     }
-    
+
     @Override
-    public void p(String s){
+    public void tests(){
+      /*
+       we should make database/unitTests.sqlite3 and load that instead of
+       one that will keep changing as we play with the forum.
+      */ 
+       
+      int passed = 0;
+      int failed = 0;
+
+      //--getUsers
+      if(test(getUsers(), "success")) passed++;
+      else {p("Failed getUsers"); failed++; }
+
+      //--getPersonView
+      if(test(getPersonView("tb15269"), "success")) passed++;
+      else {p("Failed getPersonView 1"); failed++; }
+
+      if(test(getPersonView("tb1269"), "fatal")) passed++;
+      else {p("Failed getPersonView 2"); failed++; }
+
+      //--getSimpleForums
+      if(test(getSimpleForums(), "success")) passed++;
+      else {p("Failed getUsers"); failed++; }
+
+      //--countPostsInTopic
+      if(test(countPostsInTopic(1), "success")) passed++;
+      else {p("Failed countPostsInTopic"); failed++; }
+
+      //--getLikers
+      //if(test(getLikers(1), "success")) passed++;
+      //else {p("Failed countPostsInTopic"); failed++; }
+
+      //--getSimpleTopic
+      if(test(getSimpleTopic(1), "success")) passed++;
+      else {p("Failed getSimpleTopic1"); failed++; }
+
+      if(test(getSimpleTopic(100), "fatal")) passed++;
+      else {p("Failed getSimpleTopic2"); failed++; }
+
+      //--getLatestPost
+      if(test(getLatestPost(1), "success")) passed++;
+      else {p("Failed getLatestPost1"); failed++; }
+
+      if(test(getLatestPost(100), "fatal")) passed++;
+      else {p("Failed getLatestPost2"); failed++; }
+
+      //--getForums
+      if(test(getForums(), "success")) passed++;
+      else {p("Failed getForums"); failed++; }
+
+      //--createForum
+      if(test(createForum("test"), "success")) passed++;
+      else {p("Failed createForum1 - simple create test"); failed++; }
+      deleteForum("test");
+
+      if(test(createForum("Politics"), "failure")) passed++;
+      else {p("Failed createForum2 - creating duplicate"); failed++; }
+
+      if(test(createForum(null), "failure")) passed++;
+      else {p("Failed createForum3 - create with null title"); failed++; }
+
+      if(test(createForum(""), "failure")) passed++;
+      else {p("Failed createForum4 - create with empty title"); failed++; }
+
+      /*
+      getForums()
+      createForum(String title)
+      createPost(long topicId, String username, String text)
+      addNewPerson(String name, String username, String studentId)
+      getForum(long id)
+      getTopic(long topicId, int page)
+      likeTopic(String username, long topicId, boolean like)
+      favouriteTopic(String username, long topicId, boolean fav)
+      //LEVEL 3*/
+      
+      //--createTopic
+      //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+      if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
+      else {p("Failed createTopic1 - create with valid everything"); failed++; }
+      deleteTopic(0, "testTopic");
+      
+      if(test(createTopic(100,"tb15269","testTopic", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic2 - Forum does not exist"); failed++; }
+      
+      if(test(createTopic(1,"tb1529","testTopic", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic3 - User does not exist"); failed++; }
+      
+      if(test(createTopic(1,"tb1529","", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic4 - Empty Title"); failed++; }
+      
+      if(test(createTopic(1,"tb1529","testTopic", ""), "failure")) passed++;
+      else {p("Failed createTopic5 - Empty Text"); failed++; }
+      
+      /*getAdvancedForums()
+      getAdvancedPersonView(String username)
+      getAdvancedForum(long id)
+      likePost(String username, long topicId, int post, boolean like)
+      */
+
+      p("Passed " + passed + " tests. Failed " + failed);
+    }
+
+    private void p(String s){
        System.out.println(s);
     }
-    
-    @Override
-    public boolean test(Result r, String expectedResult){
+
+    private boolean test(Result r, String expectedResult){
        try{
          switch(expectedResult){
             case "success":
@@ -155,7 +189,7 @@ public class API implements APIProvider {
           return false;
        }
     }
-    
+
    //Test with: http://localhost:8000/people
    @Override
    public Result<Map<String, String>> getUsers() {
@@ -229,13 +263,19 @@ public class API implements APIProvider {
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         Result.success(r.getInt("numposts"));
+         return Result.success(r.getInt("numposts"));
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
        return Result.fatal("Fatal getPostsInTopic");
     }
 
+    /*SELECT name, username, stuId
+    FROM Person
+    JOIN Topic_Likers ON Topic_Likers.personid = Person.id
+    WHERE Topic_likers.topicid = 1
+    ORDER BY Person.name ASC;
+    */
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
        if(doesTopicExist(topicId) == false){
@@ -243,11 +283,11 @@ public class API implements APIProvider {
        };
        try(
          PreparedStatement s = c.prepareStatement(
-            "SELECT name, username, studentId " +
+            "SELECT name, username, stuId " +
             "FROM Person " +
             "JOIN Topic_Likers ON Topic_Likers.personid = Person.id " +
-            "WHERE Topic_likers.topicid = ?" +
-            "ORDER BY Person.name DESC;"
+            "WHERE Topic_likers.topicid = ? " +
+            "ORDER BY Person.name ASC;"
    		);
          ){
          s.setLong(1, topicId);
@@ -255,7 +295,7 @@ public class API implements APIProvider {
             ResultSet r = s.executeQuery();
             List<PersonView> likers = new ArrayList<>();
             while(r.next()){
-               PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("studentId"));
+               PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
                likers.add(liker);
             }
             return Result.success(likers);
@@ -264,7 +304,6 @@ public class API implements APIProvider {
    	}
    	return Result.fatal("Fatal getLikers");
    }
-    
 
     /* Test with: http://localhost:8000/topic0/1
        or
@@ -313,14 +352,14 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getSimpleTopic");
     }
 
-    //testwith: 
+    //testwith:
     @Override
     public Result<PostView> getLatestPost(long topicId) {
        try{
          PreparedStatement s = c.prepareStatement(
-               "SELECT forum.id as forumid,         post.topicid as topicid, " + 
+               "SELECT forum.id as forumid,         post.topicid as topicid, " +
                       "post.id as postNumber,       person.name as authorname, " +
-                      "person.username as username, post.text as text, " + 
+                      "person.username as username, post.text as text, " +
                       "post.date as postedAt,       likes.numLikes as numberOfLikes " +
                       "FROM Post " +
                "JOIN Person ON Post.authorid = Person.id " +
@@ -332,7 +371,7 @@ public class API implements APIProvider {
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         
+
          //PostView(long forumId, long topicId, int postNumber, String authorName, String authorUserName, String text, int postedAt, int likes)
          PostView pv = new PostView(r.getLong("forumid"),
                                     r.getLong("topicid"),
@@ -342,26 +381,71 @@ public class API implements APIProvider {
                                     r.getString("text"),
                                     r.getInt("postedAt"),
                                     r.getInt("numberOfLikes"));
-         Result.success(pv);
+         return Result.success(pv);
        }catch(SQLException ex){
          printError("Error in getSimpleTopic: " + ex.getMessage());
        }
        return Result.fatal("Fatal getSimpleTopic");
     }
 
-    // Test with: http://localhost:8000/forums
+/*
+.header on
+.mode column
+SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+FROM Forum AS f
+JOIN (
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
+
+BELOW IS THE SHORTENED QUERY WITHOUT SELECTING lastTopic.forumid BECAUSE IT IS THE SAME AS f.id.
+
+.header on
+.mode column
+SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+FROM Forum AS f
+JOIN (
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
+
+
+Test with:
+http://localhost:8000/forums
+*/
     @Override
     public Result<List<ForumSummaryView>> getForums() {
       try(
    		PreparedStatement s = c.prepareStatement(
-               "SELECT f.id, f.title FROM Forum;"
+         "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id " +
+         "FROM Forum AS f " +
+         "JOIN ( " +
+            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date " +
+            "FROM Topic t " +
+            "JOIN Post AS p ON t.id = p.topicid " +
+            "GROUP BY p.date " +
+         ") AS lastTopic ON f.id = lastTopic.forumid " +
+         "GROUP BY f.title;"
    		);
       ){
          ResultSet r = s.executeQuery();
-         List forumsList = new ArrayList<ForumSummaryView>();
+         List<ForumSummaryView> forumsList = new ArrayList<>();
+
          while (r.next()) {
-            ForumSummaryView fsv = new ForumSummaryView(r.getString("title"), r.getLong("id"));
-            simpleForumsList.add(sfsv);
+            SimpleTopicSummaryView lastTopic = new SimpleTopicSummaryView(r.getLong("topicid"),
+                                                                          r.getLong("id"),
+                                                                          r.getString("topicTitle"));
+
+            ForumSummaryView fsv = new ForumSummaryView(r.getLong("id"),
+                                                        r.getString("title"),
+                                                        lastTopic);
+            forumsList.add(fsv);
          }
          return Result.success(forumsList);
 
@@ -371,9 +455,44 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getForums");
     }
 
+    /**
+     * @return success if the forum was created, failure if the title was
+     * null, empty or such a forum already existed; fatal on other errors.
+     */
+    // Test with: http://localhost:8000/newforum
     @Override
     public Result createForum(String title) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "INSERT INTO Forum (title) VALUES (?);"
+            );
+         ){
+         if(title == null) throw new RuntimeException("Cannot have forum with null title");
+         if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
+         createStatement.setString(1, title);
+         createStatement.executeUpdate();
+         c.commit();
+         return Result.success();
+      }catch (SQLException ex) {
+         if(ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title"))
+            return Result.failure(ex.getMessage());
+         else return Result.fatal(ex.getMessage());
+      }catch (RuntimeException ex){
+         return Result.failure(ex.getMessage());
+      }
+    }
+
+    //just for the tests
+    private void deleteForum(String title) {
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "DELETE FROM Forum WHERE title = ?;"
+            );
+         ){
+         createStatement.setString(1, title);
+         createStatement.executeUpdate();
+         c.commit();
+      }catch (SQLException | RuntimeException ex) {
+          System.err.println("deleteForum Error");
+      }
     }
 
     @Override
@@ -406,9 +525,76 @@ public class API implements APIProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+     *         success if the post was created and 
+     *         fatal if something else went wrong.
+     */
     @Override
     public Result createTopic(long forumId, String username, String title, String text) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       //Create Topic
+       //Create first post
+       //If fail to create post roll back to before create topic
+       try(
+               PreparedStatement newTopic = c.prepareStatement(
+                  "INSERT INTO Topic (forumid, title) VALUES (?,?);"
+               );
+               PreparedStatement newPost = c.prepareStatement(
+                  "INSERT INTO Post (authorid, topicid, text) VALUES ("
+                + "(SELECT id FROM Person WHERE username = ?),"
+                + "(SELECT id FROM Topic WHERE title = ?),"
+                + "?);"
+               )
+            ){
+         if(username == null || title == null || text == null) throw new RuntimeException("Cannot have null");
+         if(username.isEmpty() || title.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
+         newTopic.setLong(1, forumId);
+         newTopic.setString(2, title);
+         newPost.setString(1, username);
+         newPost.setString(2, title);
+         newPost.setString(3, text);
+         newTopic.executeUpdate();
+         newPost.executeUpdate();
+         c.commit();
+         return Result.success();
+       }
+       catch (SQLException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
+            return Result.failure(ex.getLocalizedMessage());
+          else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
+            return Result.failure(ex.getLocalizedMessage());
+          else return Result.fatal("create topic failed");
+       } catch(RuntimeException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          return Result.failure("create topic failed");
+       }
+    }
+    
+    private void deleteTopic(long forumId, String title){
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
+            );
+         ){
+         createStatement.setLong(1, forumId);
+         createStatement.setString(2, title);
+         createStatement.executeUpdate();
+         c.commit();
+      }catch (SQLException | RuntimeException ex) {
+          System.err.println("deleteForum Error. " + ex.getLocalizedMessage());
+      }
     }
 
     @Override
@@ -439,7 +625,10 @@ public class API implements APIProvider {
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
     }
     
-    boolean doesTopicExist(long topicId){
+    /*SELECT COUNT(*)
+      FROM Topic
+      WHERE Topic.id = 10;*/
+    private boolean doesTopicExist(long topicId){
        try(
             PreparedStatement s = c.prepareStatement(
                "SELECT COUNT(*) " +
@@ -448,16 +637,13 @@ public class API implements APIProvider {
             );
          ){
          s.setLong(1, topicId);
-
          ResultSet r = s.executeQuery();
-         
          if(r.next()){
             return true;
          }
          else{
             return false;
          }
-
       }catch (SQLException ex) {
          printError("Error while querying if topic exists: " + ex.getMessage());
          return false;
