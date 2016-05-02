@@ -137,10 +137,22 @@ public class API implements APIProvider {
       //LEVEL 3*/
       
       //createTopic(long forumId, String username, String title, String text)
+      //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
       if(test(createTopic(0,"tb15269","testTopic", "This is some test text"), "success")) passed++;
       else {p("Failed createTopic1 - create with valid everything"); failed++; }
-      
       deleteTopic(0, "testTopic");
+      
+      if(test(createTopic(100,"tb15269","testTopic", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic2 - Forum does not exist"); failed++; }
+      
+      if(test(createTopic(0,"tb1529","testTopic", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic3 - User does not exist"); failed++; }
+      
+      if(test(createTopic(0,"tb1529","", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic4 - Empty Title"); failed++; }
+      
+      if(test(createTopic(0,"tb1529","testTopic", ""), "failure")) passed++;
+      else {p("Failed createTopic5 - Empty Text"); failed++; }
       
       /*getAdvancedForums()
       getAdvancedPersonView(String username)
@@ -516,10 +528,13 @@ http://localhost:8000/forums
          newPost.setString(1, username);
          newPost.setString(2, title);
          newPost.setString(3, text);
+         newTopic.executeUpdate();
+         newPost.executeUpdate();
          c.commit();
          return Result.success();
        }
        catch (SQLException ex){
+          System.out.println("SQLException in createTopic: " + ex.getLocalizedMessage());
           try{
              c.rollback();
           }
@@ -527,12 +542,19 @@ http://localhost:8000/forums
              System.err.println("Rollback Error");
              throw new RuntimeException("Rollback Error");
           }
-          System.out.println("" + ex.getLocalizedMessage());
+          return Result.failure("create topic failed");
        } catch(RuntimeException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
           return Result.failure("create topic failed");
        }
-       return Result.fatal("not yet implemented");
     }
+    
     private void deleteTopic(long forumId, String title){
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
