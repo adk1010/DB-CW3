@@ -460,8 +460,8 @@ http://localhost:8000/forums
           "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?, ?);"
           );
        ){
-       //Test for topicID match
-       //Test for username match
+       //Test for topicID match... Error: FOREIGN KEY constraint failed
+       //Test for username match... Error: FOREIGN KEY constraint failed
        if(text.isEmpty()) throw new RuntimeException("The post must contain text.");
 
        if(title == null) throw new RuntimeException("Cannot have forum with null title");
@@ -470,6 +470,7 @@ http://localhost:8000/forums
        createStatement.executeUpdate();
        c.commit();
        return Result.success();
+
        }catch (SQLException ex) {
           if(ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title"))
           return Result.failure(ex.getMessage());
