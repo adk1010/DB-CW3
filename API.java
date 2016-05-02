@@ -109,6 +109,9 @@ public class API implements APIProvider {
       if(test(createForum(""), "failure")) passed++;
       else {p("Failed createForum4 - create with empty title"); failed++; }
 
+      //--createPost
+
+
       /*
       we should make database/unitTests.sqlite3 and load that instead of
       one that will keep changing as we play with the forum.
@@ -121,9 +124,9 @@ public class API implements APIProvider {
       getSimpleTopic(long topicId)
       //Level 2
       getLatestPost(long topicId)
-
       getForums()
       createForum(String title)
+
       createPost(long topicId, String username, String text)
       addNewPerson(String name, String username, String studentId)
       getForum(long id)
@@ -441,9 +444,74 @@ http://localhost:8000/forums
       }
     }
 
+    /**
+    * Create a post in an existing topic.
+    * @param topicId - the id of the topic to post in. Must refer to
+    * an existing topic.
+    * @param username - the name under which to post; user must exist.
+    * @param text - the content of the post, cannot be empty.
+    * @return success if the post was made, failure if any of the preconditions
+    * were not met and fatal if something else went wrong.
+    */
+    /*
+    CREATE TABLE Person (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    username VARCHAR(10) NOT NULL UNIQUE,
+    stuId VARCHAR(10) NULL
+    );
+
+    CREATE TABLE Post (
+       id INTEGER PRIMARY KEY,
+       authorid INTEGER NOT NULL,
+       topicid INTEGER NOT NULL,
+       text TEXT,
+       date INTEGER NOT NULL,
+       CONSTRAINT topic_fk FOREIGN KEY (topicid) REFERENCES Topic (id),
+       CONSTRAINT author_fk FOREIGN KEY (authorid) REFERENCES Person (id)
+    );
+
+public Result createPost(long topicId, String username, String text) {
+    PreparedStatement ps0 (
+    SELECT id
+    FROM Person
+    WHERE username = (?);
+    );
+
+    ps0.setString(1, username);
+
+    ResultSet r = s.executeQuery();
+
+    PreparedStatement createStatement (
+    INSERT INTO Post (topicid, authorid, text) VALUES (?);
+    );
+
+    createStatement.setLong(1, topicId);
+    createStatement.setLong(2, r.getLong("id")); //Would this work?
+    createStatement.setString(3, text);
+    createStatement.executeUpdate();
+    ...
+}
+    */
     @Override
     public Result createPost(long topicId, String username, String text) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try( PreparedStatement createStatement = c.prepareStatement(
+          "INSERT INTO Post (topicid, authorid, text) VALUES (?);"
+          );
+       ){
+       if(title == null) throw new RuntimeException("Cannot have forum with null title");
+       if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
+       createStatement.setString(1, title);
+       createStatement.executeUpdate();
+       c.commit();
+       return Result.success();
+       }catch (SQLException ex) {
+          if(ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title"))
+          return Result.failure(ex.getMessage());
+          else return Result.fatal(ex.getMessage());
+       }catch (RuntimeException ex){
+       return Result.failure(ex.getMessage());
+       }
     }
 
     @Override
