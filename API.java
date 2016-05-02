@@ -14,19 +14,7 @@ import java.sql.*;
 import java.util.*;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
-import uk.ac.bris.cs.databases.api.APIProvider;
-import uk.ac.bris.cs.databases.api.AdvancedForumSummaryView;
-import uk.ac.bris.cs.databases.api.AdvancedForumView;
-import uk.ac.bris.cs.databases.api.ForumSummaryView;
-import uk.ac.bris.cs.databases.api.ForumView;
-import uk.ac.bris.cs.databases.api.AdvancedPersonView;
-import uk.ac.bris.cs.databases.api.PostView;
-import uk.ac.bris.cs.databases.api.Result;
-import uk.ac.bris.cs.databases.api.PersonView;
-import uk.ac.bris.cs.databases.api.SimpleForumSummaryView;
-import uk.ac.bris.cs.databases.api.SimplePostView; //ALEX JUST ADDED THIS - SHOULD WE NEED TO BE DOING THIS?
-import uk.ac.bris.cs.databases.api.SimpleTopicView;
-import uk.ac.bris.cs.databases.api.TopicView;
+import uk.ac.bris.cs.databases.api.*;
 import uk.ac.bris.cs.databases.util.Params;
 import uk.ac.bris.cs.databases.web.ApplicationContext;
 
@@ -103,9 +91,11 @@ public class API implements APIProvider {
       if(test(getLatestPost(100), "fatal")) passed++;
       else {p("Failed getLatestPost2"); failed++; }
 
-     //--getForums
+      //--getForums
+      if(test(getForums(), "success")) passed++;
+      else {p("Failed getForums"); failed++; }
 
-     //--createForum
+      //--createForum
       if(test(createForum("test"), "success")) passed++;
       else {p("Failed createForum1 - simple create test"); failed++; }
       deleteForum("test");
@@ -344,9 +334,71 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getSimpleTopic");
     }
 
+/*
+.header on
+.mode column
+SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+FROM Forum AS f
+JOIN (
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
+
+BELOW IS THE SHORTENED QUERY WITHOUT SELECTING lastTopic.forumid BECAUSE IT IS THE SAME AS f.id.
+
+.header on
+.mode column
+SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+FROM Forum AS f
+JOIN (
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
+
+
+Test with:
+http://localhost:8000/forums
+*/
     @Override
     public Result<List<ForumSummaryView>> getForums() {
-        throw new UnsupportedOperationException("Not supported yet.");
+      try(
+   		PreparedStatement s = c.prepareStatement(
+         "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id " +
+         "FROM Forum AS f " +
+         "JOIN ( " +
+            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date " +
+            "FROM Topic t " +
+            "JOIN Post AS p ON t.id = p.topicid " +
+            "GROUP BY p.date " +
+         ") AS lastTopic ON f.id = lastTopic.forumid " +
+         "GROUP BY f.title;"
+   		);
+      ){
+         ResultSet r = s.executeQuery();
+         List<ForumSummaryView> forumsList = new ArrayList<>();
+
+         while (r.next()) {
+            SimpleTopicSummaryView lastTopic = new SimpleTopicSummaryView(r.getLong("topicid"),
+                                                                          r.getLong("id"),
+                                                                          r.getString("topicTitle"));
+
+            ForumSummaryView fsv = new ForumSummaryView(r.getLong("id"),
+                                                        r.getString("title"),
+                                                        lastTopic);
+            forumsList.add(fsv);
+         }
+         return Result.success(forumsList);
+
+      }catch (SQLException ex) {
+         printError("Error in getForums: " + ex.getMessage());
+      }
+      return Result.fatal("Fatal getForums");
     }
 
     /**
