@@ -453,50 +453,11 @@ http://localhost:8000/forums
     * @return success if the post was made, failure if any of the preconditions
     * were not met and fatal if something else went wrong.
     */
-    /*
-    CREATE TABLE Person (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    username VARCHAR(10) NOT NULL UNIQUE,
-    stuId VARCHAR(10) NULL
-    );
-
-    CREATE TABLE Post (
-       id INTEGER PRIMARY KEY,
-       authorid INTEGER NOT NULL,
-       topicid INTEGER NOT NULL,
-       text TEXT,
-       date INTEGER NOT NULL,
-       CONSTRAINT topic_fk FOREIGN KEY (topicid) REFERENCES Topic (id),
-       CONSTRAINT author_fk FOREIGN KEY (authorid) REFERENCES Person (id)
-    );
-
-public Result createPost(long topicId, String username, String text) {
-    PreparedStatement ps0 (
-    SELECT id
-    FROM Person
-    WHERE username = (?);
-    );
-
-    ps0.setString(1, username);
-
-    ResultSet r = s.executeQuery();
-
-    PreparedStatement createStatement (
-    INSERT INTO Post (topicid, authorid, text) VALUES (?);
-    );
-
-    createStatement.setLong(1, topicId);
-    createStatement.setLong(2, r.getLong("id")); //Would this work?
-    createStatement.setString(3, text);
-    createStatement.executeUpdate();
-    ...
-}
-    */
     @Override
     public Result createPost(long topicId, String username, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
-          "INSERT INTO Post (topicid, authorid, text) VALUES (?);"
+          "INSERT INTO Post (topicid, authorid, text, date) " +
+          "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?, ?);"
           );
        ){
        if(title == null) throw new RuntimeException("Cannot have forum with null title");
