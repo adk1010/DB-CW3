@@ -464,9 +464,12 @@ http://localhost:8000/forums
        //Test for username match... Error: FOREIGN KEY constraint failed
        if(text.isEmpty()) throw new RuntimeException("The post must contain text.");
 
-       if(title == null) throw new RuntimeException("Cannot have forum with null title");
-       if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
-       createStatement.setString(1, title);
+       createStatement.setLong(1, topicId);
+       createStatement.setString(2, username);
+       createStatement.setString(3, text);
+       //date?
+       createStatement.setInt(4, date);
+
        createStatement.executeUpdate();
        c.commit();
        return Result.success();
