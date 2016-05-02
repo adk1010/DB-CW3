@@ -467,15 +467,15 @@ http://localhost:8000/forums
        createStatement.setLong(1, topicId);
        createStatement.setString(2, username);
        createStatement.setString(3, text);
-       //date?
-       createStatement.setInt(4, date);
+
+       createStatement.setInt(4,  //auto timestamp pls);
 
        createStatement.executeUpdate();
        c.commit();
        return Result.success();
 
        }catch (SQLException ex) {
-          if(ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title"))
+          if (ex.getLocalizedMessage().contains("Error: FOREIGN KEY constraint failed"))
           return Result.failure(ex.getMessage());
           else return Result.fatal(ex.getMessage());
        }catch (RuntimeException ex){
