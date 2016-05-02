@@ -43,6 +43,17 @@ public class API implements APIProvider {
             properties.setProperty("PRAGMA foreign_keys", "ON");
             conn = DriverManager.getConnection(DATABASE, properties);
             conn.setAutoCommit(false);
+            
+            try(
+               PreparedStatement s = conn.prepareStatement("PRAGMA foreign_keys = ON;");
+            ){
+               s.executeUpdate();
+               conn.commit();
+            }catch (SQLException ex) {
+               System.err.println("Error in Setup: " + ex.getLocalizedMessage());
+            }
+            
+            
             api = new API(conn);
             c.setApi(api);
          } catch (SQLException e) {
@@ -136,22 +147,22 @@ public class API implements APIProvider {
       favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
       
-      //createTopic(long forumId, String username, String title, String text)
+      //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
-      if(test(createTopic(0,"tb15269","testTopic", "This is some test text"), "success")) passed++;
+      if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
       else {p("Failed createTopic1 - create with valid everything"); failed++; }
       deleteTopic(0, "testTopic");
       
       if(test(createTopic(100,"tb15269","testTopic", "This is some test text"), "failure")) passed++;
       else {p("Failed createTopic2 - Forum does not exist"); failed++; }
       
-      if(test(createTopic(0,"tb1529","testTopic", "This is some test text"), "failure")) passed++;
+      if(test(createTopic(1,"tb1529","testTopic", "This is some test text"), "failure")) passed++;
       else {p("Failed createTopic3 - User does not exist"); failed++; }
       
-      if(test(createTopic(0,"tb1529","", "This is some test text"), "failure")) passed++;
+      if(test(createTopic(1,"tb1529","", "This is some test text"), "failure")) passed++;
       else {p("Failed createTopic4 - Empty Title"); failed++; }
       
-      if(test(createTopic(0,"tb1529","testTopic", ""), "failure")) passed++;
+      if(test(createTopic(1,"tb1529","testTopic", ""), "failure")) passed++;
       else {p("Failed createTopic5 - Empty Text"); failed++; }
       
       /*getAdvancedForums()
