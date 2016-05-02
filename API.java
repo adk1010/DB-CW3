@@ -91,9 +91,11 @@ public class API implements APIProvider {
       if(test(getLatestPost(100), "fatal")) passed++;
       else {p("Failed getLatestPost2"); failed++; }
 
-     //--getForums
+      //--getForums
+      if(test(getForums(), "success")) passed++;
+      else {p("Failed getForums"); failed++; }
 
-     //--createForum
+      //--createForum
       if(test(createForum("test"), "success")) passed++;
       else {p("Failed createForum1 - simple create test"); failed++; }
       deleteForum("test");
@@ -332,50 +334,49 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getSimpleTopic");
     }
 
-
-
 /*
-SHORTER VERSION OF THE QUERY - IGNORE 
-.header on
-.mode column
-SELECT f.title, lastTopic.title, lastTopic.date
-FROM Forum AS f
-JOIN (
-   SELECT t.title AS title, t.forumid, p.date AS date
-   FROM Topic t
-   JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.date
-) AS lastTopic ON f.id = lastTopic.forumid
-GROUP BY f.title;
-
-
-QUERY BELOW WORKS IN OUR DATABASE
 .header on
 .mode column
 SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
 FROM Forum AS f
 JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, t.forumid, p.date AS date
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
    FROM Topic t
    JOIN Post AS p ON t.id = p.topicid
    GROUP BY p.date
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
-     */
 
-    // Test with: http://localhost:8000/forums
+BELOW IS THE SHORTENED QUERY WITHOUT SELECTING lastTopic.forumid BECAUSE IT IS THE SAME AS f.id.
+
+.header on
+.mode column
+SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+FROM Forum AS f
+JOIN (
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   FROM Topic t
+   JOIN Post AS p ON t.id = p.topicid
+   GROUP BY p.date
+) AS lastTopic ON f.id = lastTopic.forumid
+GROUP BY f.title;
+
+
+Test with:
+http://localhost:8000/forums
+*/
     @Override
     public Result<List<ForumSummaryView>> getForums() {
       try(
    		PreparedStatement s = c.prepareStatement(
-         "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id" +
-         "FROM Forum AS f" +
-         "JOIN (" +
-            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, t.forumid, p.date AS date" +
-            "FROM Topic t" +
-            "JOIN Post AS p ON t.id = p.topicid" +
-            "GROUP BY p.date" +
-         ") AS lastTopic ON f.id = lastTopic.forumid" +
+         "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id " +
+         "FROM Forum AS f " +
+         "JOIN ( " +
+            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date " +
+            "FROM Topic t " +
+            "JOIN Post AS p ON t.id = p.topicid " +
+            "GROUP BY p.date " +
+         ") AS lastTopic ON f.id = lastTopic.forumid " +
          "GROUP BY f.title;"
    		);
       ){
@@ -384,14 +385,11 @@ GROUP BY f.title;
 
          while (r.next()) {
             SimpleTopicSummaryView lastTopic = new SimpleTopicSummaryView(r.getLong("topicid"),
-                                                                          r.getLong("topicForumid"),
+                                                                          r.getLong("id"),
                                                                           r.getString("topicTitle"));
 
-
-            //SimpleTopicSummaryView dummy = new SimpleTopicSummaryView(12, 222, "dummy");
-
             ForumSummaryView fsv = new ForumSummaryView(r.getLong("id"),
-                                                        r.getString("title"),// dummy);
+                                                        r.getString("title"),
                                                         lastTopic);
             forumsList.add(fsv);
          }
