@@ -505,7 +505,6 @@ http://localhost:8000/forums
        //Create Topic
        //Create first post
        //If fail to create post roll back to before create topic
-       //NOT QUITE FINISHED. Should work out if forum does not exist, user does not exist then fail else fatal.
        try(
                PreparedStatement newTopic = c.prepareStatement(
                   "INSERT INTO Topic (forumid, title) VALUES (?,?);"
@@ -530,7 +529,6 @@ http://localhost:8000/forums
          return Result.success();
        }
        catch (SQLException ex){
-          System.out.println("SQLException in createTopic: " + ex.getLocalizedMessage());
           try{
              c.rollback();
           }
@@ -538,7 +536,11 @@ http://localhost:8000/forums
              System.err.println("Rollback Error");
              throw new RuntimeException("Rollback Error");
           }
-          return Result.failure("create topic failed");
+          if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
+            return Result.failure(ex.getLocalizedMessage());
+          else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
+            return Result.failure(ex.getLocalizedMessage());
+          else return Result.fatal("create topic failed");
        } catch(RuntimeException ex){
           try{
              c.rollback();
