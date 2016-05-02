@@ -471,6 +471,18 @@ http://localhost:8000/forums
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * Create a new topic in a forum.
+     * @param forumId - the id of the forum in which to create the topic. This
+     * forum must exist.
+     * @param username - the username under which to make this post. Must refer
+     * to an existing username.
+     * @param title - the title of this topic. Cannot be empty.
+     * @param text - the text of the initial post. Cannot be empty.
+     * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+     *         success if the post was created and 
+     *         fatal if something else went wrong.
+     */
     @Override
     public Result createTopic(long forumId, String username, String title, String text) {
         throw new UnsupportedOperationException("Not supported yet.");
