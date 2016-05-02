@@ -62,6 +62,11 @@ public class API implements APIProvider {
 
     @Override
     public void tests(){
+      /*
+       we should make database/unitTests.sqlite3 and load that instead of
+       one that will keep changing as we play with the forum.
+      */ 
+       
       int passed = 0;
       int failed = 0;
 
@@ -121,18 +126,6 @@ public class API implements APIProvider {
       else {p("Failed createForum4 - create with empty title"); failed++; }
 
       /*
-      we should make database/unitTests.sqlite3 and load that instead of
-      one that will keep changing as we play with the forum.
-
-      getUsers()
-      getPersonView(String username)
-      getSimpleForums()
-      countPostsInTopic(long topicId)
-      getLikers(long topicId)
-      getSimpleTopic(long topicId)
-      //Level 2
-      getLatestPost(long topicId)
-
       getForums()
       createForum(String title)
       createPost(long topicId, String username, String text)
@@ -141,9 +134,15 @@ public class API implements APIProvider {
       getTopic(long topicId, int page)
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
-      //LEVEL 3
-      createTopic(long forumId, String username, String title, String text)
-      getAdvancedForums()
+      //LEVEL 3*/
+      
+      //createTopic(long forumId, String username, String title, String text)
+      if(test(createTopic(0,"tb15269","testTopic", "This is some test text"), "success")) passed++;
+      else {p("Failed createTopic1 - create with valid everything"); failed++; }
+      
+      deleteTopic(0, "testTopic");
+      
+      /*getAdvancedForums()
       getAdvancedPersonView(String username)
       getAdvancedForum(long id)
       likePost(String username, long topicId, int post, boolean like)
@@ -496,7 +495,56 @@ http://localhost:8000/forums
      */
     @Override
     public Result createTopic(long forumId, String username, String title, String text) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       //Create Topic
+       //Create first post
+       //If fail to create post roll back to before create topic
+       try(
+               PreparedStatement newTopic = c.prepareStatement(
+                  "INSERT INTO Topic (forumid, title) VALUES (?,?);"
+               );
+               PreparedStatement newPost = c.prepareStatement(
+                  "INSERT INTO Post (authorid, topicid, text) VALUES ("
+                + "(SELECT id FROM Person WHERE username = ?),"
+                + "(SELECT id FROM Topic WHERE title = ?),"
+                + "?);"
+               )
+            ){
+         if(username == null || title == null || text == null) throw new RuntimeException("Cannot have null");
+         if(username.isEmpty() || title.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
+         newTopic.setLong(1, forumId);
+         newTopic.setString(2, title);
+         newPost.setString(1, username);
+         newPost.setString(2, title);
+         newPost.setString(3, text);
+         c.commit();
+         return Result.success();
+       }
+       catch (SQLException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          System.out.println("" + ex.getLocalizedMessage());
+       } catch(RuntimeException ex){
+          return Result.failure("create topic failed");
+       }
+       return Result.fatal("not yet implemented");
+    }
+    private void deleteTopic(long forumId, String title){
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
+            );
+         ){
+         createStatement.setLong(1, forumId);
+         createStatement.setString(2, title);
+         createStatement.executeUpdate();
+         c.commit();
+      }catch (SQLException | RuntimeException ex) {
+          System.err.println("deleteForum Error. " + ex.getLocalizedMessage());
+      }
     }
 
     @Override
