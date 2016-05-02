@@ -14,6 +14,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.sqlite.SQLiteConfig;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 import uk.ac.bris.cs.databases.api.*;
@@ -38,22 +39,12 @@ public class API implements APIProvider {
          ApplicationContext c = ApplicationContext.getInstance();
          APIProvider api;
          Connection conn;
-         try{
-            Properties properties = new Properties();
-            properties.setProperty("PRAGMA foreign_keys", "ON");
-            conn = DriverManager.getConnection(DATABASE, properties);
+         try{            
+            SQLiteConfig config = new SQLiteConfig();  
+            config.enforceForeignKeys(true);  
+            conn = DriverManager.getConnection(DATABASE, config.toProperties());  
             conn.setAutoCommit(false);
-            
-            try(
-               PreparedStatement s = conn.prepareStatement("PRAGMA foreign_keys = ON;");
-            ){
-               s.executeUpdate();
-               conn.commit();
-            }catch (SQLException ex) {
-               System.err.println("Error in Setup: " + ex.getLocalizedMessage());
-            }
-            
-            
+
             api = new API(conn);
             c.setApi(api);
          } catch (SQLException e) {
@@ -505,13 +496,6 @@ http://localhost:8000/forums
     }
 
     /**
-     * Create a new topic in a forum.
-     * @param forumId - the id of the forum in which to create the topic. This
-     * forum must exist.
-     * @param username - the username under which to make this post. Must refer
-     * to an existing username.
-     * @param title - the title of this topic. Cannot be empty.
-     * @param text - the text of the initial post. Cannot be empty.
      * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
      *         success if the post was created and 
      *         fatal if something else went wrong.
@@ -521,6 +505,7 @@ http://localhost:8000/forums
        //Create Topic
        //Create first post
        //If fail to create post roll back to before create topic
+       //NOT QUITE FINISHED. Should work out if forum does not exist, user does not exist then fail else fatal.
        try(
                PreparedStatement newTopic = c.prepareStatement(
                   "INSERT INTO Topic (forumid, title) VALUES (?,?);"
