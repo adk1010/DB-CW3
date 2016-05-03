@@ -40,9 +40,9 @@ public class API implements APIProvider {
          API api;
          Connection conn;
          try{            
-            SQLiteConfig config = new SQLiteConfig();  
-            config.enforceForeignKeys(true);  
-            conn = DriverManager.getConnection(DATABASE, config.toProperties());  
+            Properties props = new Properties();
+            props.setProperty("foreign_keys", "true");
+            conn = DriverManager.getConnection(DATABASE, props);
             conn.setAutoCommit(false);
 
             api = new API(conn);
