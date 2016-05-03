@@ -127,9 +127,12 @@ public class API implements APIProvider {
       else {p("Failed createForum4 - create with empty title"); failed++; }
 
       //--createPost
-      //public Result createPost(long topicId, String username, String text)
-      // private void deletePost(long authorid, long topicid, String text)
-      if(test(createPost(1,"tb15269","testPost"), "success")) passed++;
+      /* public Result createPost(long topicId, String username, String text)
+         private void deletePost(long authorid, long topicid, String text)
+
+         @return success if the post was made, failure if any of the preconditions
+         were not met and fatal if something else went wrong. */
+      if(test(createPost(1,"ak15308","testPost"), "success")) passed++;
       else {p("Failed createPost1 - create with valid everything"); failed++; }
       deletePost(3, 1, "testPost");
 
@@ -500,7 +503,7 @@ http://localhost:8000/forums
     public Result createPost(long topicId, String username, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
           "INSERT INTO Post (authorid, topicid, text) " +
-          "VALUES ((SELECT id FROM Person WHERE username = ?), ? ?);"
+          "VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?);"
           );
        ){
           if(username == null || text == null) throw new RuntimeException("Cannot have null");
@@ -528,9 +531,7 @@ http://localhost:8000/forums
             return Result.failure(ex.getLocalizedMessage());
           else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
             return Result.failure(ex.getLocalizedMessage());
-            else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.topicid"))
-             return Result.failure(ex.getLocalizedMessage());
-          else return Result.fatal("Create post failed");
+          else return Result.fatal("Create post fatal error");
        } catch(RuntimeException ex){
           try{
              c.rollback();
@@ -539,7 +540,7 @@ http://localhost:8000/forums
              System.err.println("Rollback Error");
              throw new RuntimeException("Rollback Error");
           }
-          return Result.failure("Create post failed");
+          return Result.fatal("Create post failed");
        }
     }
 
