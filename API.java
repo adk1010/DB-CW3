@@ -335,14 +335,14 @@ public class API implements APIProvider {
        Test with: http://localhost:8000/topic0/2
 
        SQL query:
-       SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;
+       SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;
     */
 
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t " +
+               "SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t " +
                "JOIN Post AS p ON t.id = p.topicid " +
                "JOIN Person AS per ON p.authorid = per.id " +
                "WHERE t.id = ?"
@@ -360,7 +360,7 @@ public class API implements APIProvider {
             SimplePostView spv = new SimplePostView(r.getInt("postid"),
                                                     r.getString("username"),
                                                     r.getString("text"),
-                                                    r.getInt("date"));
+                                                    r.getInt("postedAt"));
             simplePostsList.add(spv);
          }
 
@@ -385,7 +385,7 @@ public class API implements APIProvider {
                "SELECT forum.id as forumid,         post.topicid as topicid, " +
                       "post.id as postNumber,       person.name as authorname, " +
                       "person.username as username, post.text as text, " +
-                      "post.date as postedAt,       likes.numLikes as numberOfLikes " +
+                      "post.postedAt as postedAt,       likes.numLikes as numberOfLikes " +
                       "FROM Post " +
                "JOIN Person ON Post.authorid = Person.id " +
                "JOIN Topic ON Post.topicid = Topic.id " +
@@ -419,10 +419,10 @@ public class API implements APIProvider {
 SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
 FROM Forum AS f
 JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
    FROM Topic t
    JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.date
+   GROUP BY p.postedAt
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
 
@@ -433,10 +433,10 @@ BELOW IS THE SHORTENED QUERY WITHOUT SELECTING lastTopic.forumid BECAUSE IT IS T
 SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
 FROM Forum AS f
 JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
    FROM Topic t
    JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.date
+   GROUP BY p.postedAt
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
 
@@ -451,10 +451,10 @@ http://localhost:8000/forums
          "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id " +
          "FROM Forum AS f " +
          "JOIN ( " +
-            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date " +
+            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt " +
             "FROM Topic t " +
             "JOIN Post AS p ON t.id = p.topicid " +
-            "GROUP BY p.date " +
+            "GROUP BY p.postedAt " +
          ") AS lastTopic ON f.id = lastTopic.forumid " +
          "GROUP BY f.title;"
    		);
