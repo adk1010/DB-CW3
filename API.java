@@ -389,6 +389,7 @@ GROUP BY f.title;
 Test with:
 http://localhost:8000/forums
 */
+
     @Override
     public Result<List<ForumSummaryView>> getForums() {
       try(
@@ -474,34 +475,54 @@ http://localhost:8000/forums
     * @return success if the post was made, failure if any of the preconditions
     * were not met and fatal if something else went wrong.
     **/
+
+    /*
+    Test with:
+    http://localhost:8000/createpost
+    */
     @Override
     public Result createPost(long topicId, String username, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
-          "INSERT INTO Post (topicid, authorid, text, date) " +
-          "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?, ?);"
+          "INSERT INTO Post (topicid, authorid, text) " +
+          "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?);"
           );
        ){
-       //Test for topicID match... Error: FOREIGN KEY constraint failed
-       //Test for username match... Error: FOREIGN KEY constraint failed
-       if(text.isEmpty()) throw new RuntimeException("The post must contain text.");
+          if(username == null || text == null) throw new RuntimeException("Cannot have null");
+          if(username.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
 
-       createStatement.setLong(1, topicId);
-       createStatement.setString(2, username);
-       createStatement.setString(3, text);
+          createStatement.setLong(1, topicId);
+          createStatement.setString(2, username);
+          createStatement.setString(3, text);
 
-       createStatement.setInt(4,  //auto timestamp pls);
+          createStatement.executeUpdate();
+          c.commit();
 
-       createStatement.executeUpdate();
-       c.commit();
-       return Result.success();
-
-       }catch (SQLException ex) {
-          if (ex.getLocalizedMessage().contains("Error: FOREIGN KEY constraint failed"))
-          return Result.failure(ex.getMessage());
-          else return Result.fatal(ex.getMessage());
-       }catch (RuntimeException ex){
-       return Result.failure(ex.getMessage());
+          return Result.success();
        }
+       catch (SQLException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+            if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
+               return Result.failure(ex.getLocalizedMessage());
+            else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
+               return Result.failure(ex.getLocalizedMessage());
+            else return Result.fatal("create topic failed");
+          }
+          catch(RuntimeException ex){
+             try{
+                c.rollback();
+             }
+             catch(SQLException e){
+                System.err.println("Rollback Error");
+                throw new RuntimeException("Rollback Error");
+             }
+             return Result.failure("create topic failed");
+          }
     }
 
     /*
@@ -518,30 +539,6 @@ http://localhost:8000/forums
    }
    // handle main exception
    }
-
-    c.commit();
-  return Result.success();
- }
- catch (SQLException ex){
-    System.out.println("SQLException in createTopic: " + ex.getLocalizedMessage());
-    try{
-      c.rollback();
-    }
-    catch(SQLException e){
-      System.err.println("Rollback Error");
-      throw new RuntimeException("Rollback Error");
-    }
-    return Result.failure("create topic failed");
- } catch(RuntimeException ex){
-    try{
-      c.rollback();
-    }
-    catch(SQLException e){
-      System.err.println("Rollback Error");
-      throw new RuntimeException("Rollback Error");
-    }
-    return Result.failure("create topic failed");
- }
 */
 
     @Override
