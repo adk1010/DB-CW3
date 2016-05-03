@@ -540,7 +540,7 @@ http://localhost:8000/forums
              System.err.println("Rollback Error");
              throw new RuntimeException("Rollback Error");
           }
-          return Result.fatal("Create post failed");
+          return Result.failure("Create post failed");
        }
     }
 
