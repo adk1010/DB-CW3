@@ -304,8 +304,8 @@ public class API implements APIProvider {
             return Result.success(likers);
    	}catch (SQLException ex) {
          printError("Error in getLikers: " + ex.getMessage());
+         return Result.fatal("Fatal getLikers");
    	}
-   	return Result.fatal("Fatal getLikers");
    }
 
     /* Test with: http://localhost:8000/topic0/1
