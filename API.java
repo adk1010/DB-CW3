@@ -12,6 +12,9 @@ package uk.ac.bris.cs.databases.cwk3;
 import java.sql.*;
 //import java.util.List;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.sqlite.SQLiteConfig;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 import uk.ac.bris.cs.databases.api.*;
@@ -37,8 +40,11 @@ public class API implements APIProvider {
          APIProvider api;
          Connection conn;
          try{
-            conn = DriverManager.getConnection(DATABASE);
+            SQLiteConfig config = new SQLiteConfig();
+            config.enforceForeignKeys(true);
+            conn = DriverManager.getConnection(DATABASE, config.toProperties());
             conn.setAutoCommit(false);
+
             api = new API(conn);
             c.setApi(api);
          } catch (SQLException e) {
@@ -47,10 +53,22 @@ public class API implements APIProvider {
 
       //TESTS
          api.tests();
+
+      //Close connection
+       try {
+          conn.close();
+       } catch (SQLException ex) {
+          System.err.println("Can't close DB");
+       }
     }
 
     @Override
     public void tests(){
+      /*
+       we should make database/unitTests.sqlite3 and load that instead of
+       one that will keep changing as we play with the forum.
+      */
+
       int passed = 0;
       int failed = 0;
 
@@ -109,33 +127,36 @@ public class API implements APIProvider {
       if(test(createForum(""), "failure")) passed++;
       else {p("Failed createForum4 - create with empty title"); failed++; }
 
-      //--createPost
-
-
       /*
-      we should make database/unitTests.sqlite3 and load that instead of
-      one that will keep changing as we play with the forum.
-
-      getUsers()
-      getPersonView(String username)
-      getSimpleForums()
-      countPostsInTopic(long topicId)
-      getLikers(long topicId)
-      getSimpleTopic(long topicId)
-      //Level 2
-      getLatestPost(long topicId)
       getForums()
       createForum(String title)
-
       createPost(long topicId, String username, String text)
       addNewPerson(String name, String username, String studentId)
       getForum(long id)
       getTopic(long topicId, int page)
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
-      //LEVEL 3
-      createTopic(long forumId, String username, String title, String text)
-      getAdvancedForums()
+      //LEVEL 3*/
+
+      //--createTopic
+      //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+      if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
+      else {p("Failed createTopic1 - create with valid everything"); failed++; }
+      deleteTopic(0, "testTopic");
+
+      if(test(createTopic(100,"tb15269","testTopic", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic2 - Forum does not exist"); failed++; }
+
+      if(test(createTopic(1,"tb1529","testTopic", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic3 - User does not exist"); failed++; }
+
+      if(test(createTopic(1,"tb1529","", "This is some test text"), "failure")) passed++;
+      else {p("Failed createTopic4 - Empty Title"); failed++; }
+
+      if(test(createTopic(1,"tb1529","testTopic", ""), "failure")) passed++;
+      else {p("Failed createTopic5 - Empty Text"); failed++; }
+
+      /*getAdvancedForums()
       getAdvancedPersonView(String username)
       getAdvancedForum(long id)
       likePost(String username, long topicId, int post, boolean like)
@@ -444,84 +465,10 @@ http://localhost:8000/forums
       }
     }
 
-    /**
-    * Create a post in an existing topic.
-    * @param topicId - the id of the topic to post in. Must refer to
-    * an existing topic.
-    * @param username - the name under which to post; user must exist.
-    * @param text - the content of the post, cannot be empty.
-    * @return success if the post was made, failure if any of the preconditions
-    * were not met and fatal if something else went wrong.
-    */
     @Override
     public Result createPost(long topicId, String username, String text) {
-       try( PreparedStatement createStatement = c.prepareStatement(
-          "INSERT INTO Post (topicid, authorid, text, date) " +
-          "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?, ?);"
-          );
-       ){
-       //Test for topicID match... Error: FOREIGN KEY constraint failed
-       //Test for username match... Error: FOREIGN KEY constraint failed
-       if(text.isEmpty()) throw new RuntimeException("The post must contain text.");
-
-       createStatement.setLong(1, topicId);
-       createStatement.setString(2, username);
-       createStatement.setString(3, text);
-
-       createStatement.setInt(4,  //auto timestamp pls);
-
-       createStatement.executeUpdate();
-       c.commit();
-       return Result.success();
-
-       }catch (SQLException ex) {
-          if (ex.getLocalizedMessage().contains("Error: FOREIGN KEY constraint failed"))
-          return Result.failure(ex.getMessage());
-          else return Result.fatal(ex.getMessage());
-       }catch (RuntimeException ex){
-       return Result.failure(ex.getMessage());
-       }
+        throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    /*
-   try (PreparedStatement p  = ...) {
-   // do stuff
-   c.commit();
-   }
-   catch (SQLException e) {
-   try {
-   c.rollback();
-   }
-   catch (SQLException f) {
-   // handle rollback exception
-   }
-   // handle main exception
-   }
-
-    c.commit();
-  return Result.success();
- }
- catch (SQLException ex){
-    System.out.println("SQLException in createTopic: " + ex.getLocalizedMessage());
-    try{
-      c.rollback();
-    }
-    catch(SQLException e){
-      System.err.println("Rollback Error");
-      throw new RuntimeException("Rollback Error");
-    }
-    return Result.failure("create topic failed");
- } catch(RuntimeException ex){
-    try{
-      c.rollback();
-    }
-    catch(SQLException e){
-      System.err.println("Rollback Error");
-      throw new RuntimeException("Rollback Error");
-    }
-    return Result.failure("create topic failed");
- }
-*/
 
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
@@ -548,9 +495,76 @@ http://localhost:8000/forums
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+     *         success if the post was created and
+     *         fatal if something else went wrong.
+     */
     @Override
     public Result createTopic(long forumId, String username, String title, String text) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       //Create Topic
+       //Create first post
+       //If fail to create post roll back to before create topic
+       try(
+               PreparedStatement newTopic = c.prepareStatement(
+                  "INSERT INTO Topic (forumid, title) VALUES (?,?);"
+               );
+               PreparedStatement newPost = c.prepareStatement(
+                  "INSERT INTO Post (authorid, topicid, text) VALUES ("
+                + "(SELECT id FROM Person WHERE username = ?),"
+                + "(SELECT id FROM Topic WHERE title = ?),"
+                + "?);"
+               )
+            ){
+         if(username == null || title == null || text == null) throw new RuntimeException("Cannot have null");
+         if(username.isEmpty() || title.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
+         newTopic.setLong(1, forumId);
+         newTopic.setString(2, title);
+         newPost.setString(1, username);
+         newPost.setString(2, title);
+         newPost.setString(3, text);
+         newTopic.executeUpdate();
+         newPost.executeUpdate();
+         c.commit();
+         return Result.success();
+       }
+       catch (SQLException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
+            return Result.failure(ex.getLocalizedMessage());
+          else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
+            return Result.failure(ex.getLocalizedMessage());
+          else return Result.fatal("create topic failed");
+       } catch(RuntimeException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          return Result.failure("create topic failed");
+       }
+    }
+
+    private void deleteTopic(long forumId, String title){
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
+            );
+         ){
+         createStatement.setLong(1, forumId);
+         createStatement.setString(2, title);
+         createStatement.executeUpdate();
+         c.commit();
+      }catch (SQLException | RuntimeException ex) {
+          System.err.println("deleteForum Error. " + ex.getLocalizedMessage());
+      }
     }
 
     @Override
