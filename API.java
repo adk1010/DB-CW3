@@ -477,21 +477,22 @@ http://localhost:8000/forums
     **/
 
     /*
-    Test with:
-    http://localhost:8000/createpost
+    Test with:                    [topic id]
+    http://localhost:8000/newpost/:id
     */
     @Override
     public Result createPost(long topicId, String username, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
-          "INSERT INTO Post (topicid, authorid, text) " +
-          "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?);"
+          "INSERT INTO Post (authorid, topicid, text) " +
+          "VALUES ((SELECT id FROM Person WHERE username = ?), ? ?);"
           );
        ){
           if(username == null || text == null) throw new RuntimeException("Cannot have null");
+          // Error message on website for empty text is different to below?
           if(username.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
 
-          createStatement.setLong(1, topicId);
-          createStatement.setString(2, username);
+          createStatement.setString(1, username);
+          createStatement.setLong(2, topicId);
           createStatement.setString(3, text);
 
           createStatement.executeUpdate();
@@ -507,39 +508,22 @@ http://localhost:8000/forums
              System.err.println("Rollback Error");
              throw new RuntimeException("Rollback Error");
           }
-            if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
-               return Result.failure(ex.getLocalizedMessage());
-            else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
-               return Result.failure(ex.getLocalizedMessage());
-            else return Result.fatal("create topic failed");
+          if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
+            return Result.failure(ex.getLocalizedMessage());
+          else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
+            return Result.failure(ex.getLocalizedMessage());
+          else return Result.fatal("create topic failed");
+       } catch(RuntimeException ex){
+          try{
+             c.rollback();
           }
-          catch(RuntimeException ex){
-             try{
-                c.rollback();
-             }
-             catch(SQLException e){
-                System.err.println("Rollback Error");
-                throw new RuntimeException("Rollback Error");
-             }
-             return Result.failure("create topic failed");
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
           }
+          return Result.failure("create topic failed");
+       }
     }
-
-    /*
-   try (PreparedStatement p  = ...) {
-   // do stuff
-   c.commit();
-   }
-   catch (SQLException e) {
-   try {
-   c.rollback();
-   }
-   catch (SQLException f) {
-   // handle rollback exception
-   }
-   // handle main exception
-   }
-*/
 
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
