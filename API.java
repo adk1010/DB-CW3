@@ -37,12 +37,12 @@ public class API implements APIProvider {
     public static void main(String[] args){
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
-         APIProvider api;
+         API api;
          Connection conn;
          try{
-            SQLiteConfig config = new SQLiteConfig();
-            config.enforceForeignKeys(true);
-            conn = DriverManager.getConnection(DATABASE, config.toProperties());
+            Properties props = new Properties();
+            props.setProperty("foreign_keys", "true");
+            conn = DriverManager.getConnection(DATABASE, props);
             conn.setAutoCommit(false);
 
             api = new API(conn);
@@ -62,8 +62,7 @@ public class API implements APIProvider {
        }
     }
 
-    @Override
-    public void tests(){
+    private void tests(){
       /*
        we should make database/unitTests.sqlite3 and load that instead of
        one that will keep changing as we play with the forum.
@@ -389,7 +388,6 @@ GROUP BY f.title;
 Test with:
 http://localhost:8000/forums
 */
-
     @Override
     public Result<List<ForumSummaryView>> getForums() {
       try(
@@ -466,65 +464,9 @@ http://localhost:8000/forums
       }
     }
 
-    /***
-    * Create a post in an existing topic.
-    * @param topicId - the id of the topic to post in. Must refer to
-    * an existing topic.
-    * @param username - the name under which to post; user must exist.
-    * @param text - the content of the post, cannot be empty.
-    * @return success if the post was made, failure if any of the preconditions
-    * were not met and fatal if something else went wrong.
-    **/
-
-    /*
-    Test with:                    [topic id]
-    http://localhost:8000/newpost/:id
-    */
     @Override
     public Result createPost(long topicId, String username, String text) {
-       try( PreparedStatement createStatement = c.prepareStatement(
-          "INSERT INTO Post (authorid, topicid, text) " +
-          "VALUES ((SELECT id FROM Person WHERE username = ?), ? ?);"
-          );
-       ){
-          if(username == null || text == null) throw new RuntimeException("Cannot have null");
-          // Error message on website for empty text is different to below?
-          if(username.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
-
-          createStatement.setString(1, username);
-          createStatement.setLong(2, topicId);
-          createStatement.setString(3, text);
-
-          createStatement.executeUpdate();
-          c.commit();
-
-          return Result.success();
-       }
-       catch (SQLException ex){
-          try{
-             c.rollback();
-          }
-          catch(SQLException e){
-             System.err.println("Rollback Error");
-             throw new RuntimeException("Rollback Error");
-          }
-          if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
-            return Result.failure(ex.getLocalizedMessage());
-          else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
-            return Result.failure(ex.getLocalizedMessage());
-            else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.topicid"))
-             return Result.failure(ex.getLocalizedMessage());
-          else return Result.fatal("Create post failed");
-       } catch(RuntimeException ex){
-          try{
-             c.rollback();
-          }
-          catch(SQLException e){
-             System.err.println("Rollback Error");
-             throw new RuntimeException("Rollback Error");
-          }
-          return Result.failure("Create post failed");
-       }
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
