@@ -37,7 +37,7 @@ public class API implements APIProvider {
     public static void main(String[] args){       
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
-         APIProvider api;
+         API api;
          Connection conn;
          try{            
             SQLiteConfig config = new SQLiteConfig();  
@@ -62,8 +62,8 @@ public class API implements APIProvider {
        }
     }
 
-    @Override
-    public void tests(){
+    //@Override
+    private void tests(){
       /*
        we should make database/unitTests.sqlite3 and load that instead of
        one that will keep changing as we play with the forum.
