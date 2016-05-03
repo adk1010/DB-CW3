@@ -62,7 +62,6 @@ public class API implements APIProvider {
        }
     }
 
-    //@Override
     private void tests(){
       /*
        we should make database/unitTests.sqlite3 and load that instead of
