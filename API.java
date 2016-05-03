@@ -34,7 +34,7 @@ public class API implements APIProvider {
     }
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-    public static void main(String[] args){       
+    public static void main(String[] args){
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
          API api;
@@ -55,7 +55,7 @@ public class API implements APIProvider {
       //TESTS
          api.tests();
 
-      //Close connection   
+      //Close connection
        try {
           conn.close();
        } catch (SQLException ex) {
@@ -91,8 +91,11 @@ public class API implements APIProvider {
       else {p("Failed countPostsInTopic"); failed++; }
 
       //--getLikers
-      //if(test(getLikers(1), "success")) passed++;
-      //else {p("Failed countPostsInTopic"); failed++; }
+      if(test(getLikers(1), "success")) passed++;
+      else {p("Failed getLikers"); failed++; }
+
+      if(test(getLikers(100), "failure")) passed++;
+      else {p("Failed getLikers"); failed++; }
 
       //--getSimpleTopic
       if(test(getSimpleTopic(1), "success")) passed++;
@@ -159,7 +162,7 @@ public class API implements APIProvider {
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
-        
+
       //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
       if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
@@ -292,10 +295,40 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getPostsInTopic");
     }
 
+    /*SELECT name, username, stuId
+    FROM Person
+    JOIN Topic_Likers ON Topic_Likers.personid = Person.id
+    WHERE Topic_likers.topicid = 1
+    ORDER BY Person.name ASC;
+    */
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+       if(doesTopicExist(topicId) == false){
+          return Result.failure("Failure: topic does not exist");
+       };
+       try(
+         PreparedStatement s = c.prepareStatement(
+            "SELECT name, username, stuId " +
+            "FROM Person " +
+            "JOIN Topic_Likers ON Topic_Likers.personid = Person.id " +
+            "WHERE Topic_likers.topicid = ? " +
+            "ORDER BY Person.name ASC;"
+   		);
+         ){
+         s.setLong(1, topicId);
+
+            ResultSet r = s.executeQuery();
+            List<PersonView> likers = new ArrayList<>();
+            while(r.next()){
+               PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
+               likers.add(liker);
+            }
+            return Result.success(likers);
+   	}catch (SQLException ex) {
+         printError("Error in getLikers: " + ex.getMessage());
+         return Result.fatal("Fatal getLikers");
+   	}
+   }
 
     /* Test with: http://localhost:8000/topic0/1
        or
@@ -588,11 +621,7 @@ http://localhost:8000/forums
 
     /**
      * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
-<<<<<<< HEAD
      *         success if the post was created and
-=======
-     *         success if the post was created and 
->>>>>>> master
      *         fatal if something else went wrong.
      */
     @Override
@@ -647,7 +676,7 @@ http://localhost:8000/forums
           return Result.failure("create topic failed");
        }
     }
-    
+
     private void deleteTopic(long forumId, String title){
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
@@ -688,6 +717,31 @@ http://localhost:8000/forums
 
     private void printDebug(String s){
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
+    }
+
+    /*SELECT COUNT Topic.id
+      FROM Topic
+      WHERE Topic.id = 10;*/
+    private boolean doesTopicExist(long topicId){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT Topic.id " +
+               "FROM Topic " +
+               "WHERE Topic.id = ?"
+            );
+         ){
+         s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if topic exists: " + ex.getMessage());
+         return false;
+      }
     }
 
    }
