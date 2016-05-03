@@ -465,10 +465,84 @@ http://localhost:8000/forums
       }
     }
 
+    /***
+    * Create a post in an existing topic.
+    * @param topicId - the id of the topic to post in. Must refer to
+    * an existing topic.
+    * @param username - the name under which to post; user must exist.
+    * @param text - the content of the post, cannot be empty.
+    * @return success if the post was made, failure if any of the preconditions
+    * were not met and fatal if something else went wrong.
+    **/
     @Override
     public Result createPost(long topicId, String username, String text) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try( PreparedStatement createStatement = c.prepareStatement(
+          "INSERT INTO Post (topicid, authorid, text, date) " +
+          "VALUES (?, (SELECT id FROM Person WHERE username = ?), ?, ?);"
+          );
+       ){
+       //Test for topicID match... Error: FOREIGN KEY constraint failed
+       //Test for username match... Error: FOREIGN KEY constraint failed
+       if(text.isEmpty()) throw new RuntimeException("The post must contain text.");
+
+       createStatement.setLong(1, topicId);
+       createStatement.setString(2, username);
+       createStatement.setString(3, text);
+
+       createStatement.setInt(4,  //auto timestamp pls);
+
+       createStatement.executeUpdate();
+       c.commit();
+       return Result.success();
+
+       }catch (SQLException ex) {
+          if (ex.getLocalizedMessage().contains("Error: FOREIGN KEY constraint failed"))
+          return Result.failure(ex.getMessage());
+          else return Result.fatal(ex.getMessage());
+       }catch (RuntimeException ex){
+       return Result.failure(ex.getMessage());
+       }
     }
+
+    /*
+   try (PreparedStatement p  = ...) {
+   // do stuff
+   c.commit();
+   }
+   catch (SQLException e) {
+   try {
+   c.rollback();
+   }
+   catch (SQLException f) {
+   // handle rollback exception
+   }
+   // handle main exception
+   }
+
+    c.commit();
+  return Result.success();
+ }
+ catch (SQLException ex){
+    System.out.println("SQLException in createTopic: " + ex.getLocalizedMessage());
+    try{
+      c.rollback();
+    }
+    catch(SQLException e){
+      System.err.println("Rollback Error");
+      throw new RuntimeException("Rollback Error");
+    }
+    return Result.failure("create topic failed");
+ } catch(RuntimeException ex){
+    try{
+      c.rollback();
+    }
+    catch(SQLException e){
+      System.err.println("Rollback Error");
+      throw new RuntimeException("Rollback Error");
+    }
+    return Result.failure("create topic failed");
+ }
+*/
 
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
