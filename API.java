@@ -512,7 +512,9 @@ http://localhost:8000/forums
             return Result.failure(ex.getLocalizedMessage());
           else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
             return Result.failure(ex.getLocalizedMessage());
-          else return Result.fatal("create topic failed");
+            else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.topicid"))
+             return Result.failure(ex.getLocalizedMessage());
+          else return Result.fatal("Create post failed");
        } catch(RuntimeException ex){
           try{
              c.rollback();
@@ -521,7 +523,7 @@ http://localhost:8000/forums
              System.err.println("Rollback Error");
              throw new RuntimeException("Rollback Error");
           }
-          return Result.failure("create topic failed");
+          return Result.failure("Create post failed");
        }
     }
 
