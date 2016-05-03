@@ -92,8 +92,11 @@ public class API implements APIProvider {
       else {p("Failed countPostsInTopic"); failed++; }
 
       //--getLikers
-      //if(test(getLikers(1), "success")) passed++;
-      //else {p("Failed countPostsInTopic"); failed++; }
+      if(test(getLikers(1), "success")) passed++;
+      else {p("Failed countPostsInTopic1"); failed++; }
+      
+      if(test(getLikers(100), "failure")) passed++;
+      else {p("Failed countPostsInTopic2"); failed++; }
 
       //--getSimpleTopic
       if(test(getSimpleTopic(1), "success")) passed++;
@@ -280,7 +283,7 @@ public class API implements APIProvider {
     public Result<List<PersonView>> getLikers(long topicId) {
        if(doesTopicExist(topicId) == false){
           return Result.failure("Failure: topic does not exist");
-       };
+       }
        try(
          PreparedStatement s = c.prepareStatement(
             "SELECT name, username, stuId " +
