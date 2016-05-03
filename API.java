@@ -39,7 +39,8 @@ public class API implements APIProvider {
          ApplicationContext c = ApplicationContext.getInstance();
          API api;
          Connection conn;
-         try{            
+
+         try{
             Properties props = new Properties();
             props.setProperty("foreign_keys", "true");
             conn = DriverManager.getConnection(DATABASE, props);
@@ -53,7 +54,7 @@ public class API implements APIProvider {
 
       //TESTS
          api.tests();
-         
+
       //Close connection   
        try {
           conn.close();
@@ -66,8 +67,7 @@ public class API implements APIProvider {
       /*
        we should make database/unitTests.sqlite3 and load that instead of
        one that will keep changing as we play with the forum.
-      */ 
-       
+      */
       int passed = 0;
       int failed = 0;
 
@@ -126,6 +126,29 @@ public class API implements APIProvider {
       if(test(createForum(""), "failure")) passed++;
       else {p("Failed createForum4 - create with empty title"); failed++; }
 
+
+      //--createPost
+      /* public Result createPost(long topicId, String username, String text)
+         private void deletePost(long authorid, long topicid, String text)
+
+         @return success if the post was made, failure if any of the preconditions
+         were not met and fatal if something else went wrong. */
+      if(test(createPost(1,"ak15308","testPost"), "success")) passed++;
+      else {p("Failed createPost1 - create with valid everything"); failed++; }
+      deletePost(3, 1, "testPost");
+
+      if(test(createPost(100,"tb15269","testPost"), "failure")) passed++;
+      else {p("Failed createPost2 - Topic does not exist"); failed++; }
+
+      if(test(createPost(1,"tb1529","testPost"), "failure")) passed++;
+      else {p("Failed createPost3 - User does not exist"); failed++; }
+
+      if(test(createPost(1,"","testPost"), "failure")) passed++;
+      else {p("Failed createPost4 - Empty username"); failed++; }
+
+      if(test(createPost(1,"tb1529",""), "failure")) passed++;
+      else {p("Failed createPost5 - Empty text"); failed++; }
+
       /*
       getForums()
       createForum(String title)
@@ -136,25 +159,25 @@ public class API implements APIProvider {
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
-      
+        
       //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
       if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
       else {p("Failed createTopic1 - create with valid everything"); failed++; }
       deleteTopic(0, "testTopic");
-      
+
       if(test(createTopic(100,"tb15269","testTopic", "This is some test text"), "failure")) passed++;
       else {p("Failed createTopic2 - Forum does not exist"); failed++; }
-      
+
       if(test(createTopic(1,"tb1529","testTopic", "This is some test text"), "failure")) passed++;
       else {p("Failed createTopic3 - User does not exist"); failed++; }
-      
+
       if(test(createTopic(1,"tb1529","", "This is some test text"), "failure")) passed++;
       else {p("Failed createTopic4 - Empty Title"); failed++; }
-      
+
       if(test(createTopic(1,"tb1529","testTopic", ""), "failure")) passed++;
       else {p("Failed createTopic5 - Empty Text"); failed++; }
-      
+
       /*getAdvancedForums()
       getAdvancedPersonView(String username)
       getAdvancedForum(long id)
@@ -464,9 +487,78 @@ http://localhost:8000/forums
       }
     }
 
+    /***
+    * Create a post in an existing topic.
+    * @param topicId - the id of the topic to post in. Must refer to
+    * an existing topic.
+    * @param username - the name under which to post; user must exist.
+    * @param text - the content of the post, cannot be empty.
+    * @return success if the post was made, failure if any of the preconditions
+    * were not met and fatal if something else went wrong.
+    **/
+
+    /*
+    Test with:                    [topic id]
+    http://localhost:8000/newpost/:id
+    */
     @Override
     public Result createPost(long topicId, String username, String text) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try( PreparedStatement createStatement = c.prepareStatement(
+          "INSERT INTO Post (authorid, topicid, text) " +
+          "VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?);"
+          );
+       ){
+          if(username == null || text == null) throw new RuntimeException("Cannot have null");
+          // Error message on website says "Error - missing 'text'". Different to below?
+          if(username.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
+
+          createStatement.setString(1, username);
+          createStatement.setLong(2, topicId);
+          createStatement.setString(3, text);
+
+          createStatement.executeUpdate();
+          c.commit();
+
+          return Result.success();
+       }
+       catch (SQLException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          if(ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed"))
+            return Result.failure(ex.getLocalizedMessage());
+          else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
+            return Result.failure(ex.getLocalizedMessage());
+          else return Result.fatal("Create post fatal error");
+       } catch(RuntimeException ex){
+          try{
+             c.rollback();
+          }
+          catch(SQLException e){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }
+          return Result.failure("Create post failed");
+       }
+    }
+
+    private void deletePost(long authorid, long topicid, String text) {
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "DELETE FROM Post WHERE authorid = ? AND topicid = ? AND text = ?;"
+            );
+         ){
+         createStatement.setLong(1, authorid);
+         createStatement.setLong(2, topicid);
+         createStatement.setString(3, text);
+         createStatement.executeUpdate();
+         c.commit();
+      }catch (SQLException | RuntimeException ex) {
+          System.err.println("deletePost Error. " + ex.getLocalizedMessage());
+      }
     }
 
     @Override
@@ -496,7 +588,11 @@ http://localhost:8000/forums
 
     /**
      * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+<<<<<<< HEAD
+     *         success if the post was created and
+=======
      *         success if the post was created and 
+>>>>>>> master
      *         fatal if something else went wrong.
      */
     @Override
