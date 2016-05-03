@@ -34,7 +34,7 @@ public class API implements APIProvider {
     }
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-    public static void main(String[] args){       
+    public static void main(String[] args){
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
          API api;
@@ -55,7 +55,7 @@ public class API implements APIProvider {
       //TESTS
          api.tests();
 
-      //Close connection   
+      //Close connection
        try {
           conn.close();
        } catch (SQLException ex) {
@@ -93,7 +93,7 @@ public class API implements APIProvider {
       //--getLikers
       if(test(getLikers(1), "success")) passed++;
       else {p("Failed getLikers"); failed++; }
-      
+
       if(test(getLikers(100), "failure")) passed++;
       else {p("Failed getLikers"); failed++; }
 
@@ -162,7 +162,7 @@ public class API implements APIProvider {
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
-        
+
       //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
       if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
@@ -316,7 +316,7 @@ public class API implements APIProvider {
    		);
          ){
          s.setLong(1, topicId);
-         
+
             ResultSet r = s.executeQuery();
             List<PersonView> likers = new ArrayList<>();
             while(r.next()){
@@ -621,11 +621,7 @@ http://localhost:8000/forums
 
     /**
      * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
-<<<<<<< HEAD
      *         success if the post was created and
-=======
-     *         success if the post was created and 
->>>>>>> master
      *         fatal if something else went wrong.
      */
     @Override
@@ -680,7 +676,7 @@ http://localhost:8000/forums
           return Result.failure("create topic failed");
        }
     }
-    
+
     private void deleteTopic(long forumId, String title){
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
@@ -722,7 +718,7 @@ http://localhost:8000/forums
     private void printDebug(String s){
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
     }
-    
+
     /*SELECT COUNT Topic.id
       FROM Topic
       WHERE Topic.id = 10;*/
