@@ -34,11 +34,12 @@ public class API implements APIProvider {
     }
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-    public static void main(String[] args){
+    public static void main(String[] args){       
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
          API api;
          Connection conn;
+
          try{
             Properties props = new Properties();
             props.setProperty("foreign_keys", "true");
@@ -54,7 +55,7 @@ public class API implements APIProvider {
       //TESTS
          api.tests();
 
-      //Close connection
+      //Close connection   
        try {
           conn.close();
        } catch (SQLException ex) {
@@ -67,7 +68,6 @@ public class API implements APIProvider {
        we should make database/unitTests.sqlite3 and load that instead of
        one that will keep changing as we play with the forum.
       */
-
       int passed = 0;
       int failed = 0;
 
@@ -126,6 +126,7 @@ public class API implements APIProvider {
       if(test(createForum(""), "failure")) passed++;
       else {p("Failed createForum4 - create with empty title"); failed++; }
 
+
       //--createPost
       /* public Result createPost(long topicId, String username, String text)
          private void deletePost(long authorid, long topicid, String text)
@@ -147,6 +148,7 @@ public class API implements APIProvider {
 
       if(test(createPost(1,"tb1529",""), "failure")) passed++;
       else {p("Failed createPost5 - Empty text"); failed++; }
+
       /*
       getForums()
       createForum(String title)
@@ -157,7 +159,7 @@ public class API implements APIProvider {
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
-
+        
       //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
       if(test(createTopic(1,"tb15269","testTopic", "This is some test text"), "success")) passed++;
@@ -586,7 +588,11 @@ http://localhost:8000/forums
 
     /**
      * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
+<<<<<<< HEAD
      *         success if the post was created and
+=======
+     *         success if the post was created and 
+>>>>>>> master
      *         fatal if something else went wrong.
      */
     @Override
@@ -641,7 +647,7 @@ http://localhost:8000/forums
           return Result.failure("create topic failed");
        }
     }
-
+    
     private void deleteTopic(long forumId, String title){
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Topic WHERE forumid = ? AND title = ?;"
