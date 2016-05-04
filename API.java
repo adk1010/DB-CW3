@@ -92,10 +92,13 @@ public class API implements APIProvider {
 
       //--getLikers
       if(test(getLikers(1), "success")) passed++;
-      else {p("Failed getLikers"); failed++; }
+      else {p("Failed getLikers1"); failed++; }
 
-      if(test(getLikers(100), "failure")) passed++;
-      else {p("Failed getLikers"); failed++; }
+      if(test(getLikers(7), "failure")) passed++;
+      else {p("Failed getLikers2"); failed++; }
+      
+      if(test(getLikers(100), "fatal")) passed++;
+      else {p("Failed getLikers3"); failed++; }
 
       //--getSimpleTopic
       if(test(getSimpleTopic(1), "success")) passed++;
@@ -295,29 +298,34 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getPostsInTopic");
     }
 
-    /*SELECT name, username, stuId
-    FROM Person
-    JOIN Topic_Likers ON Topic_Likers.personid = Person.id
-    WHERE Topic_likers.topicid = 1
-    ORDER BY Person.name ASC;
+    /*SELECT Topic.id, Person.name, Person.username, Person.stuId
+      FROM Topic
+      LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
+      LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+      WHERE Topic.id = 7
+      ORDER BY Person.name ASC;
     */
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
-       if(doesTopicExist(topicId) == false){
-          return Result.failure("Failure: topic does not exist");
-       };
        try(
          PreparedStatement s = c.prepareStatement(
-            "SELECT name, username, stuId " +
-            "FROM Person " +
-            "JOIN Topic_Likers ON Topic_Likers.personid = Person.id " +
-            "WHERE Topic_likers.topicid = ? " +
+            "SELECT Topic.id, Person.name, Person.username, Person.stuId " +
+            "FROM Topic " +
+            "LEFT OUTER JOIN Topic_Likers ON topic.id = Topic_Likers.topicid " +
+            "LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id " +
+            "WHERE Topic.id = ? " +
             "ORDER BY Person.name ASC;"
    		);
          ){
          s.setLong(1, topicId);
 
             ResultSet r = s.executeQuery();
+            
+            if(r.getString("stuId") == null){
+               System.out.println(r.getString("stuId"));
+               return Result.failure("Failure in getLikers");
+            }
+            
             List<PersonView> likers = new ArrayList<>();
             while(r.next()){
                PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
@@ -335,14 +343,14 @@ public class API implements APIProvider {
        Test with: http://localhost:8000/topic0/2
 
        SQL query:
-       SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;
+       SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;
     */
 
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.date FROM Topic AS t " +
+               "SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t " +
                "JOIN Post AS p ON t.id = p.topicid " +
                "JOIN Person AS per ON p.authorid = per.id " +
                "WHERE t.id = ?"
@@ -360,7 +368,7 @@ public class API implements APIProvider {
             SimplePostView spv = new SimplePostView(r.getInt("postid"),
                                                     r.getString("username"),
                                                     r.getString("text"),
-                                                    r.getInt("date"));
+                                                    r.getInt("postedAt"));
             simplePostsList.add(spv);
          }
 
@@ -385,7 +393,7 @@ public class API implements APIProvider {
                "SELECT forum.id as forumid,         post.topicid as topicid, " +
                       "post.id as postNumber,       person.name as authorname, " +
                       "person.username as username, post.text as text, " +
-                      "post.date as postedAt,       likes.numLikes as numberOfLikes " +
+                      "post.postedAt as postedAt,       likes.numLikes as numberOfLikes " +
                       "FROM Post " +
                "JOIN Person ON Post.authorid = Person.id " +
                "JOIN Topic ON Post.topicid = Topic.id " +
@@ -419,10 +427,10 @@ public class API implements APIProvider {
 SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
 FROM Forum AS f
 JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
    FROM Topic t
    JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.date
+   GROUP BY p.postedAt
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
 
@@ -433,10 +441,10 @@ BELOW IS THE SHORTENED QUERY WITHOUT SELECTING lastTopic.forumid BECAUSE IT IS T
 SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
 FROM Forum AS f
 JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date
+   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
    FROM Topic t
    JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.date
+   GROUP BY p.postedAt
 ) AS lastTopic ON f.id = lastTopic.forumid
 GROUP BY f.title;
 
@@ -451,10 +459,10 @@ http://localhost:8000/forums
          "SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id " +
          "FROM Forum AS f " +
          "JOIN ( " +
-            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.date AS date " +
+            "SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt " +
             "FROM Topic t " +
             "JOIN Post AS p ON t.id = p.topicid " +
-            "GROUP BY p.date " +
+            "GROUP BY p.postedAt " +
          ") AS lastTopic ON f.id = lastTopic.forumid " +
          "GROUP BY f.title;"
    		);
