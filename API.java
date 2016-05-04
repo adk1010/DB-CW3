@@ -764,6 +764,9 @@ http://localhost:8000/forums
         JOIN Post AS pst ON pl.postid = pst.id -- gets all the ids of posts that have been liked
         JOIN Topic AS t ON pst.topicid = t.id --gets all the ids of topics of posts that have been liked
         WHERE per.username = 'ak15308' AND t.id = 2 AND pst.id = 1; -- will return a result if matched
+
+
+        INSERT INTO Post_Likers (postid, personid) VALUES (?, (SELECT Person.id FROM PERSON WHERE Person.username = ?));
      */
 
     @Override
