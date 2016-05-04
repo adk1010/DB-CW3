@@ -92,10 +92,13 @@ public class API implements APIProvider {
 
       //--getLikers
       if(test(getLikers(1), "success")) passed++;
-      else {p("Failed getLikers"); failed++; }
+      else {p("Failed getLikers1"); failed++; }
 
       if(test(getLikers(100), "failure")) passed++;
-      else {p("Failed getLikers"); failed++; }
+      else {p("Failed getLikers2"); failed++; }
+      
+      if(test(getLikers(7), "success")) passed++;
+      else {p("Failed getLikers3"); failed++; }
 
       //--getSimpleTopic
       if(test(getSimpleTopic(1), "success")) passed++;
@@ -295,35 +298,44 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getPostsInTopic");
     }
 
-    /*SELECT name, username, stuId
-    FROM Person
-    JOIN Topic_Likers ON Topic_Likers.personid = Person.id
-    WHERE Topic_likers.topicid = 1
-    ORDER BY Person.name ASC;
+    /*SELECT Topic.id, Person.name, Person.username, Person.stuId
+      FROM Topic
+      LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
+      LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+      WHERE Topic.id = 7
+      ORDER BY Person.name ASC;
     */
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
-       if(doesTopicExist(topicId) == false){
-          return Result.failure("Failure: topic does not exist");
-       };
        try(
          PreparedStatement s = c.prepareStatement(
-            "SELECT name, username, stuId " +
-            "FROM Person " +
-            "JOIN Topic_Likers ON Topic_Likers.personid = Person.id " +
-            "WHERE Topic_likers.topicid = ? " +
+            "SELECT Topic.id, Person.name, Person.username, Person.stuId " +
+            "FROM Topic " +
+            "LEFT OUTER JOIN Topic_Likers ON topic.id = Topic_Likers.topicid " +
+            "LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id " +
+            "WHERE Topic.id = ? " +
             "ORDER BY Person.name ASC;"
    		);
          ){
          s.setLong(1, topicId);
-
-            ResultSet r = s.executeQuery();
-            List<PersonView> likers = new ArrayList<>();
-            while(r.next()){
+         ResultSet r = s.executeQuery();
+         
+         List<PersonView> likers = new ArrayList<>();
+         if(r.next()){
+            if(r.getString("stuId") != null){
                PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
                likers.add(liker);
             }
-            return Result.success(likers);
+         }
+         else{
+            return Result.failure("Failure in getLikers, topic does not exist");
+         }
+         
+         while(r.next()){
+            PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
+            likers.add(liker);
+         }
+         return Result.success(likers);
    	}catch (SQLException ex) {
          printError("Error in getLikers: " + ex.getMessage());
          return Result.fatal("Fatal getLikers");
