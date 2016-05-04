@@ -730,20 +730,6 @@ http://localhost:8000/forums
      * success if the (un)like succeeded, fatal in case of other errors.
      */
      /*
-     SELECT Topic.id, Person.name, Person.username, Person.stuId
-     FROM Topic
-     LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
-     LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
-     WHERE Topic.id = 7
-     ORDER BY Person.name ASC;
-
-     SELECT Person.username, Topic.id, Post.id
-     FROM Person
-     LEFT OUTER JOIN Topic ON Topic.id = Topic_Likers.topicid
-     LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
-     WHERE Topic.id = 7
-     ORDER BY Person.name ASC;
-
      .header on
      What I need:
      1. Does username exist ?
@@ -771,39 +757,55 @@ http://localhost:8000/forums
 
     @Override
     public Result likePost(String username, long topicId, int post, boolean like) {
+       if ( (!userExists(username) || (!topicExists(topicId)) || (!postExists((long)post)) ) {
+          return Result.failure("Failure: referenced person, post or topic do not exist.");
+       }
        try(
-          PreparedStatement s = c.prepareStatement(
-             "SELECT Topic.id, Person.name, Person.username, Person.stuId " +
-             "FROM Topic " +
-             "LEFT OUTER JOIN Topic_Likers ON topic.id = Topic_Likers.topicid " +
-             "LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id " +
-             "WHERE Topic.id = ? " +
-             "ORDER BY Person.name ASC;"
+          PreparedStatement s = c.prepareStatement( // this gets post likers with this info
+             "SELECT per.username, t.id AS idOfTopicOfLikedPost, pst.id AS idOfLikedPost " +
+             "FROM Post_Likers AS pl " +
+             "JOIN Person AS per ON pl.personid = per.id " +
+             "JOIN Post AS pst ON pl.postid = pst.id " +
+             "JOIN Topic AS t ON pst.topicid = t.id " +
+             "WHERE per.username = ? AND t.id = ? AND pst.id = ?;"
           );
        ){
-       s.setLong(1, topicId);
+       s.setString(1, username);
+       s.setlong(2, topicId);
+       s.setLong(3, (long)post);
        ResultSet r = s.executeQuery();
 
-       List<PersonView> likers = new ArrayList<>();
-       if(r.next()){
-          if(r.getString("stuId") != null){
-             PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
-             likers.add(liker);
+       if(r.next()) { //if there is a post liked already
+          if (!like) {
+             try(
+               PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
+                  "INSERT INTO Post_Likers (postid, personid) " +
+                  "VALUES (?, (SELECT Person.id FROM PERSON WHERE Person.username = ?));"
+               );
+            ){
+            createStatement.setLong(1, (long)post);
+            createStatement.setString(2, username);
+            createStatement.executeUpdate();
+            c.commit();
+
+          }catch (SQLException ex) {
+             try{
+               c.rollback();
+            }
+            catch(SQLException e){
+               System.err.println("Rollback Error");
+               throw new RuntimeException("Rollback Error");
+            }
+             printError("Error in likePost: " + ex.getMessage());
+             return Result.fatal("Fatal likePost");
           }
        }
-       else{
-          return Result.failure("Failure in getLikers, topic does not exist");
-       }
 
-       while(r.next()){
-          PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
-          likers.add(liker);
-       }
-       return Result.success(likers);
-       }
-       catch (SQLException ex) {
-          printError("Error in getLikers: " + ex.getMessage());
-          return Result.fatal("Fatal getLikers");
+       return Result.success();
+
+       }catch (SQLException ex) {
+          printError("Error in likePost: " + ex.getMessage());
+          return Result.fatal("Fatal likePost");
        }
     }
 
@@ -815,12 +817,29 @@ http://localhost:8000/forums
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
     }
 
-    /*
-    SELECT Topic.id
-    FROM Topic
-    WHERE Topic.id = 10;
-    */
-    private boolean doesTopicExist(long topicId){
+    private boolean userExists(String username){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT Person.username " +
+               "FROM Person " +
+               "WHERE Person.username = ?"
+            );
+         ){
+         s.setString(1, username);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if user exists: " + ex.getMessage());
+         return false;
+      }
+    }
+
+    private boolean topicExists(long topicId){
        try(
             PreparedStatement s = c.prepareStatement(
                "SELECT Topic.id " +
@@ -842,12 +861,7 @@ http://localhost:8000/forums
       }
     }
 
-    /*
-    SELECT Post.id
-    FROM Post
-    WHERE Post.id = 10;
-    */
-    private boolean doesPostExist(long postId){
+    private boolean postExists(long postId){
        try(
             PreparedStatement s = c.prepareStatement(
                "SELECT Post.id " +
