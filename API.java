@@ -94,10 +94,10 @@ public class API implements APIProvider {
       if(test(getLikers(1), "success")) passed++;
       else {p("Failed getLikers1"); failed++; }
 
-      if(test(getLikers(7), "failure")) passed++;
+      if(test(getLikers(100), "failure")) passed++;
       else {p("Failed getLikers2"); failed++; }
       
-      if(test(getLikers(100), "fatal")) passed++;
+      if(test(getLikers(7), "success")) passed++;
       else {p("Failed getLikers3"); failed++; }
 
       //--getSimpleTopic
@@ -318,20 +318,24 @@ public class API implements APIProvider {
    		);
          ){
          s.setLong(1, topicId);
-
-            ResultSet r = s.executeQuery();
-            
-            if(r.getString("stuId") == null){
-               System.out.println(r.getString("stuId"));
-               return Result.failure("Failure in getLikers");
-            }
-            
-            List<PersonView> likers = new ArrayList<>();
-            while(r.next()){
+         ResultSet r = s.executeQuery();
+         
+         List<PersonView> likers = new ArrayList<>();
+         if(r.next()){
+            if(r.getString("stuId") != null){
                PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
                likers.add(liker);
             }
-            return Result.success(likers);
+         }
+         else{
+            return Result.failure("Failure in getLikers, topic does not exist");
+         }
+         
+         while(r.next()){
+            PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
+            likers.add(liker);
+         }
+         return Result.success(likers);
    	}catch (SQLException ex) {
          printError("Error in getLikers: " + ex.getMessage());
          return Result.fatal("Fatal getLikers");
