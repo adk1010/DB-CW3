@@ -96,7 +96,7 @@ public class API implements APIProvider {
 
       if(test(getLikers(100), "failure")) passed++;
       else {p("Failed getLikers2"); failed++; }
-      
+
       if(test(getLikers(7), "success")) passed++;
       else {p("Failed getLikers3"); failed++; }
 
@@ -298,12 +298,13 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getPostsInTopic");
     }
 
-    /*SELECT Topic.id, Person.name, Person.username, Person.stuId
-      FROM Topic
-      LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
-      LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
-      WHERE Topic.id = 7
-      ORDER BY Person.name ASC;
+    /*
+    SELECT Topic.id, Person.name, Person.username, Person.stuId
+    FROM Topic
+    LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
+    LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+    WHERE Topic.id = 7
+    ORDER BY Person.name ASC;
     */
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
@@ -319,7 +320,7 @@ public class API implements APIProvider {
          ){
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         
+
          List<PersonView> likers = new ArrayList<>();
          if(r.next()){
             if(r.getString("stuId") != null){
@@ -330,7 +331,7 @@ public class API implements APIProvider {
          else{
             return Result.failure("Failure in getLikers, topic does not exist");
          }
-         
+
          while(r.next()){
             PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
             likers.add(liker);
@@ -718,9 +719,89 @@ http://localhost:8000/forums
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * Like or unlike a post. Liking a post that you have already liked
+     * (or unliking a post you haven't liked) is a no-op, not an error.
+     * @param username - the person liking/unliking the post. Must exist.
+     * @param topicId - the topic with the post to (un)like. Must exist.
+     * @param post - the index of the post to (un)like. Must exist.
+     * @param like - true to like, false to unlike.
+     * @return failure if the person or post referenced to not exist,
+     * success if the (un)like succeeded, fatal in case of other errors.
+     */
+     /*
+     SELECT Topic.id, Person.name, Person.username, Person.stuId
+     FROM Topic
+     LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
+     LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+     WHERE Topic.id = 7
+     ORDER BY Person.name ASC;
+
+     SELECT Person.username, Topic.id, Post.id
+     FROM Person
+     LEFT OUTER JOIN Topic ON Topic.id = Topic_Likers.topicid
+     LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+     WHERE Topic.id = 7
+     ORDER BY Person.name ASC;
+
+     .header on
+     What I need:
+     1. Does username exist ?
+
+        SELECT Person.id
+        FROM Person
+        JOIN Post_Likers ON Person.id = Post_Likers.personid
+        WHERE Person.id = 1 AND Post_Likers.postid = 2;
+
+        SELECT *
+        FROM Person
+        JOIN Post_Likers ON Person.id = Post_Likers.personid
+        WHERE Person.id = 1 AND Post_Likers.postid = 3;
+
+        SELECT per.username, t.id AS idOfTopicOfLikedPost, pst.id AS idOfLikedPost
+        FROM Post_Likers AS pl
+        JOIN Person AS per ON pl.personid = per.id -- gets all the ids of people who have liked a post(s)
+        JOIN Post AS pst ON pl.postid = pst.id -- gets all the ids of posts that have been liked
+        JOIN Topic AS t ON pst.topicid = t.id --gets all the ids of topics of posts that have been liked
+        WHERE per.username = 'ak15308' AND t.id = 2 AND pst.id = 1; -- will return a result if matched
+     */
+
     @Override
     public Result likePost(String username, long topicId, int post, boolean like) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try(
+          PreparedStatement s = c.prepareStatement(
+             "SELECT Topic.id, Person.name, Person.username, Person.stuId " +
+             "FROM Topic " +
+             "LEFT OUTER JOIN Topic_Likers ON topic.id = Topic_Likers.topicid " +
+             "LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id " +
+             "WHERE Topic.id = ? " +
+             "ORDER BY Person.name ASC;"
+          );
+       ){
+       s.setLong(1, topicId);
+       ResultSet r = s.executeQuery();
+
+       List<PersonView> likers = new ArrayList<>();
+       if(r.next()){
+          if(r.getString("stuId") != null){
+             PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
+             likers.add(liker);
+          }
+       }
+       else{
+          return Result.failure("Failure in getLikers, topic does not exist");
+       }
+
+       while(r.next()){
+          PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
+          likers.add(liker);
+       }
+       return Result.success(likers);
+       }
+       catch (SQLException ex) {
+          printError("Error in getLikers: " + ex.getMessage());
+          return Result.fatal("Fatal getLikers");
+       }
     }
 
     private void printError(String s){
@@ -731,9 +812,11 @@ http://localhost:8000/forums
        System.out.println("\\x1b[32m" + s + "\\x1b[0m");
     }
 
-    /*SELECT COUNT Topic.id
-      FROM Topic
-      WHERE Topic.id = 10;*/
+    /*
+    SELECT Topic.id
+    FROM Topic
+    WHERE Topic.id = 10;
+    */
     private boolean doesTopicExist(long topicId){
        try(
             PreparedStatement s = c.prepareStatement(
@@ -752,6 +835,33 @@ http://localhost:8000/forums
          }
       }catch (SQLException ex) {
          printError("Error while querying if topic exists: " + ex.getMessage());
+         return false;
+      }
+    }
+
+    /*
+    SELECT Post.id
+    FROM Post
+    WHERE Post.id = 10;
+    */
+    private boolean doesPostExist(long postId){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT Post.id " +
+               "FROM Post " +
+               "WHERE Post.id = ?"
+            );
+         ){
+         s.setLong(1, postId);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if post exists: " + ex.getMessage());
          return false;
       }
     }
