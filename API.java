@@ -611,6 +611,12 @@ http://localhost:8000/forums
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    
+    /**
+     * Get the detailed view of a single forum.
+     * @param id - the id of the forum to get.
+     * @return A view of this forum if it exists, otherwise failure.
+     */
     @Override
     public Result<ForumView> getForum(long id) {
         throw new UnsupportedOperationException("Not supported yet.");
