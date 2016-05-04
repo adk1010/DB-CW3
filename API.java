@@ -156,11 +156,17 @@ public class API implements APIProvider {
       else {p("Failed createPost5 - Empty text"); failed++; }
 
       /*
-      getForums()
-      createForum(String title)
-      createPost(long topicId, String username, String text)
       addNewPerson(String name, String username, String studentId)
-      getForum(long id)
+      */
+      
+      //--getForum(long id)
+      if(test(getForum(1), "success")) passed++;
+      else {p("Failed getForum1"); failed++; }
+      
+      if(test(getForum(100), "failure")) passed++;
+      else {p("Failed getForum2"); failed++; }
+      
+      /*
       getTopic(long topicId, int page)
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
@@ -619,7 +625,8 @@ http://localhost:8000/forums
      */
     @Override
     public Result<ForumView> getForum(long id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       //public ForumView(long id, String title, List<SimpleTopicSummaryView> topics)
+       return Result.fatal("Not yet implemented");
     }
 
     @Override
