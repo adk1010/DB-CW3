@@ -267,7 +267,7 @@ public class API implements APIProvider {
    * <p>Get a list of all users in the system as a map username -> name.</p>
    * <p><b>Visual Test:</b> http://localhost:8000/people</p>
    * <p><b>Main Contributor:</b> Joseph</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT username, name FROM Person;</p>
    * <p>
    * <b>How it works:</b>
    * 
@@ -299,7 +299,7 @@ public class API implements APIProvider {
    * <p>Get a PersonView for the person with the given username.</p>
    * <p><b>Visual Test:</b> http://localhost:8000/person/tb15269</p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT name, username, stuId FROM Person " + "WHERE username = ?;</p>
    * <p>
    * <b>How it works:</b>
    * 
@@ -315,7 +315,7 @@ public class API implements APIProvider {
       Params.cannotBeNull(username);
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
+               "SELECT name, username, stuId FROM Person " + "WHERE username = ?;"
             );
          ){
          s.setString(1, username);
@@ -335,7 +335,7 @@ public class API implements APIProvider {
    * by title. Simple version that does not return any topic information.</p>
    * <p><b>Visual Test:</b> http://localhost:8000/forums0</p>
    * <p><b>Main Contributor:</b> Alex</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT id, title FROM Forum;</p>
    * <p>
    * <b>How it works:</b>
    * 
@@ -368,7 +368,7 @@ public class API implements APIProvider {
    * <p>Count the number of posts in a topic (without fetching them all).</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;</p>
    * <p>
    * <b>How it works:</b>
    * 
@@ -382,7 +382,7 @@ public class API implements APIProvider {
     public Result<Integer> countPostsInTopic(long topicId) {
        try{
          PreparedStatement s = c.prepareStatement(
-               "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?"
+               "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;"
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
@@ -398,7 +398,12 @@ public class API implements APIProvider {
    * alphabetically.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Joseph</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT Topic.id, Person.name, Person.username, Person.stuId
+   * FROM Topic
+   * LEFT OUTER JOIN Topic_Likers ON topic.id = Topic_Likers.topicid
+   * LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+   * WHERE Topic.id = ? 
+   * ORDER BY Person.name ASC;</p>
    * <p>
    * <b>How it works:</b>
    * 
@@ -446,7 +451,7 @@ public class API implements APIProvider {
    }
 
    /**
-   * <p></p>
+   * <p>Get a simplified view of a topic.</p>
    * <p><b>Visual Test:</b> http://localhost:8000/topic0/1</p>
    * <p><b>Main Contributor:</b> Alex</p>
    * <p><b>SQL:</b> SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;</p>
@@ -455,14 +460,10 @@ public class API implements APIProvider {
    * 
    * 
    * </p>
+   * @param topicId - the topic to get.
+   * @return The topic view if one exists with the given id,
+   * otherwise failure or fatal on database errors. 
    */
-    /* Test with: http://localhost:8000/topic0/1
-       or
-       Test with: http://localhost:8000/topic0/2
-
-       SQL query:
-       
-    */
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
@@ -503,15 +504,29 @@ public class API implements APIProvider {
     }
 
    /**
-   * <p></p>
+   * <h1>THIS NEEDS WORK - NEVER RETURNS FAILURE DOESN'T CHECK FOR TOPIC EXISTS</h1>
+   * <p>Get the latest post in a topic.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT forum.id as forumid, post.topicid as topicid, 
+   *post.id as postNumber, person.name as authorname, 
+   *person.username as username, post.text as text, 
+   *post.postedAt as postedAt, likes.numLikes as numberOfLikes 
+   *FROM Post 
+   *JOIN Person ON Post.authorid = Person.id 
+   *JOIN Topic ON Post.topicid = Topic.id 
+   *JOIN Forum ON Topic.forumid = Forum.id 
+   *JOIN (SELECT postid, count(*) as numLikes FROM Post_Likers GROUP BY postid) as Likes ON Likes.postid = Post.id 
+   *WHERE topicid = ? 
+   *ORDER BY postNumber DESC LIMIT 1;</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param topicId The topic. Must exist.
+   * @return Success and a view of the latest post if one exists,
+   * failure if the topic does not exist, fatal on database errors.
    */
     @Override
     public Result<PostView> getLatestPost(long topicId) {
@@ -580,15 +595,25 @@ Test with:
 http://localhost:8000/forums
 */
    /**
-   * <p></p>
-   * <p><b>Visual Test:</b> </p>
+   * <p>Get the "main page" containing a list of forums ordered alphabetically
+   * by title.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/forums</p>
    * <p><b>Main Contributor:</b> Alex</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+   * FROM Forum AS f
+   * JOIN (
+   * SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
+   * FROM Topic t
+   * JOIN Post AS p ON t.id = p.topicid
+   * GROUP BY p.postedAt
+   * ) AS lastTopic ON f.id = lastTopic.forumid
+   * GROUP BY f.title;</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @return the list of all forums, empty list if there are none.
    */    
     @Override
     public Result<List<ForumSummaryView>> getForums() {
@@ -627,15 +652,19 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
-   * <p><b>Visual Test:</b> </p>
+   * <p>Create a new forum.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/newforum</p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> INSERT INTO Forum (title) VALUES (?);</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param title - the title of the forum. Must not be null or empty and
+   * no forum with this name must exist yet.
+   * @return success if the forum was created, failure if the title was
+   * null, empty or such a forum already existed; fatal on other errors.
    */
     // Test with: http://localhost:8000/newforum
     @Override
@@ -668,26 +697,33 @@ http://localhost:8000/forums
          createStatement.setString(1, title);
          createStatement.executeUpdate();
          c.commit();
-      }catch (SQLException | RuntimeException ex) {
+      }catch (SQLException ex) {
+          try {
+             c.rollback();
+          } catch (SQLException ex1) {
+             System.err.println("deleteForum rollback error");
+          }
           System.err.println("deleteForum Error");
       }
     }
 
-    
-    /*
-    Test with:                    [topic id]
-    http://localhost:8000/newpost/:id
-    */
    /**
-   * <p></p>
-   * <p><b>Visual Test:</b> </p>
+   * <h1>DELETEPOST NEEDS ROLLBACK</h1>
+   * <p>Create a post in an existing topic.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/newpost/1</p>
    * <p><b>Main Contributor:</b> Alex</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> INSERT INTO Post (authorid, topicid, text) VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?);</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param topicId - the id of the topic to post in. Must refer to
+   * an existing topic.
+   * @param username - the name under which to post; user must exist.
+   * @param text - the content of the post, cannot be empty.
+   * @return success if the post was made, failure if any of the preconditions
+   * were not met and fatal if something else went wrong.
    */    
     @Override
     public Result createPost(long topicId, String username, String text) {
@@ -750,15 +786,23 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Create a new person.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> INSERT INTO Person (name, username, stuId) VALUES (?,?,?);</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param name - the person's name, cannot be empty.
+   * @param username - the person's username, cannot be empty.
+   * @param studentId - the person's student id. May be either NULL if the
+   * person is not a student or a non-empty string if they are; can not be
+   * an empty string.
+   * @return Success if no person with this username existed yet and a new
+   * one was created, failure if a person with this username already exists,
+   * fatal if something else went wrong.
    */
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
@@ -803,15 +847,17 @@ http://localhost:8000/forums
 
     
    /**
-   * <p></p>
+   * <p>Get the detailed view of a single forum.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL:</b> SELECT id as topicid, title as topictitle FROM Topic WHERE forumid = ?;</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param id - the id of the forum to get.
+   * @return A view of this forum if it exists, otherwise failure.
    */
     @Override
     public Result<ForumView> getForum(long id) {
