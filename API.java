@@ -757,7 +757,7 @@ http://localhost:8000/forums
 
     @Override
     public Result likePost(String username, long topicId, int post, boolean like) {
-       if ( (!userExists(username) || (!topicExists(topicId)) || (!postExists((long)post)) ) {
+       if ( (!userExists(username)) || (!topicExists(topicId)) || (!postExists((long)post)) ) {
           return Result.failure("Failure: referenced person, post or topic do not exist.");
        }
        try(
