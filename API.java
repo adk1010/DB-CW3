@@ -155,9 +155,50 @@ public class API implements APIProvider {
       if(test(createPost(1,"tb1529",""), "failure")) passed++;
       else {p("Failed createPost5 - Empty text"); failed++; }
 
-      /*
-      addNewPerson(String name, String username, String studentId)
-      */
+      /**
+     * Create a new person.
+     * @param name - the person's name, cannot be empty.
+     * @param username - the person's username, cannot be empty.
+     * @param studentId - the person's student id. May be either NULL if the
+     * person is not a student or a non-empty string if they are; can not be
+     * an empty string.
+     * @return Success if no person with this username existed yet and a new
+     * one was created, failure if a person with this username already exists,
+     * fatal if something else went wrong.
+     */
+      //--addNewPerson(String name, String username, String studentId)
+      deletePerson("santababy");
+      if(test(addNewPerson("santa", "santababy", "123456789"), "success")) passed++;
+      else {p("Failed addNewPerson1"); failed++; }
+      //don't delete next tests for the overwrite
+      
+      if(test(addNewPerson("santa", "santababy", "123456789"), "failure")) passed++;
+      else {p("Failed addNewPerson2"); failed++; }
+      deletePerson("santababy");
+      
+      if(test(addNewPerson("", "santababy", "123456789"), "fatal")) passed++;
+      else {p("Failed addNewPerson3"); failed++; }
+      deletePerson("santababy");
+      
+      if(test(addNewPerson(null, "santababy", "123456789"), "fatal")) passed++;
+      else {p("Failed addNewPerson4"); failed++; }
+      deletePerson("santababy");
+      
+      if(test(addNewPerson("santa", "", "123456789"), "fatal")) passed++;
+      else {p("Failed addNewPerson5"); failed++; }
+      deletePerson("santababy");
+      
+      if(test(addNewPerson("santa", null, "123456789"), "fatal")) passed++;
+      else {p("Failed addNewPerson6"); failed++; }
+      deletePerson("santababy");
+      
+      if(test(addNewPerson("santa", "santababy", ""), "fatal")) passed++;
+      else {p("Failed addNewPerson7"); failed++; }
+      deletePerson("santababy");
+      
+      if(test(addNewPerson("santa", "santababy", null), "success")) passed++;
+      else {p("Failed addNewPerson8"); failed++; }
+      deletePerson("santababy");
       
       //--getForum(long id)
       if(test(getForum(1), "success")) passed++;
@@ -612,9 +653,49 @@ http://localhost:8000/forums
       }
     }
 
+    /**
+     * Create a new person.
+     * @param name - the person's name, cannot be empty.
+     * @param username - the person's username, cannot be empty.
+     * @param studentId - the person's student id. May be either NULL if the
+     * person is not a student or a non-empty string if they are; can not be
+     * an empty string.
+     * @return Success if no person with this username existed yet and a new
+     * one was created, failure if a person with this username already exists,
+     * fatal if something else went wrong.
+     */
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try(
+               PreparedStatement s = c.prepareStatement("INSERT INTO Person (name, username, stuId) VALUES (?,?,?);");
+           ){
+          if(name == null || username == null) throw new RuntimeException("Cannot have null");
+          if(name.isEmpty() || username.isEmpty() || studentId.isEmpty()) throw new RuntimeException("Cannot have empty");
+          s.setString(1, name);
+          s.setString(2, username);
+          s.setString(3, studentId);
+          s.executeUpdate();
+          c.commit();
+          return Result.success();
+       }catch(RuntimeException ex){
+          Result.fatal("Invalid arguments to addNewPerson");
+       } catch (SQLException ex) {
+          System.err.println("" + ex.getLocalizedMessage());
+          Result.fatal("SQL Exception to addNewPerson");
+       }
+        return Result.fatal("not implemented yet");
+    }
+    private void deletePerson(String username){
+       try( PreparedStatement createStatement = c.prepareStatement(
+               "DELETE FROM Person WHERE username = ?;"
+            );
+         ){
+         createStatement.setString(1, username);
+         createStatement.executeUpdate();
+         c.commit();
+      }catch (SQLException | RuntimeException ex) {
+          System.err.println("deletePerson Error. " + ex.getLocalizedMessage());
+      }
     }
 
     
