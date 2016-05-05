@@ -156,11 +156,17 @@ public class API implements APIProvider {
       else {p("Failed createPost5 - Empty text"); failed++; }
 
       /*
-      getForums()
-      createForum(String title)
-      createPost(long topicId, String username, String text)
       addNewPerson(String name, String username, String studentId)
-      getForum(long id)
+      */
+      
+      //--getForum(long id)
+      if(test(getForum(1), "success")) passed++;
+      else {p("Failed getForum1"); failed++; }
+      
+      if(test(getForum(100), "failure")) passed++;
+      else {p("Failed getForum2"); failed++; }
+      
+      /*
       getTopic(long topicId, int page)
       likeTopic(String username, long topicId, boolean like)
       favouriteTopic(String username, long topicId, boolean fav)
@@ -611,9 +617,56 @@ http://localhost:8000/forums
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    
+    /**
+     * Get the detailed view of a single forum.
+     * @param id - the id of the forum to get.
+     * @return A view of this forum if it exists, otherwise failure.
+     */
     @Override
     public Result<ForumView> getForum(long id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       //public ForumView(long id, String title, List<SimpleTopicSummaryView> topics)
+       //public SimpleTopicSummaryView(long topicId, long forumId, String title)
+       if(!doesForumExist(id)) return Result.failure("Forum does not exist");
+       
+       try(
+   		PreparedStatement s = c.prepareStatement(
+          "SELECT id as topicid, title as topictitle FROM Topic WHERE forumid = ?;"
+   	      );
+       ){
+         s.setLong(1, id);
+         ResultSet r = s.executeQuery();
+
+         List<SimpleTopicSummaryView> topics = new ArrayList<>();
+         while (r.next()) {
+            SimpleTopicSummaryView topic = new SimpleTopicSummaryView(r.getLong("topicid"),
+                                                                      id,
+                                                                      r.getString("topicTitle"));
+            topics.add(topic);
+         }
+
+         ForumView fv = new ForumView(id, getForumTitle(id), topics);
+         return Result.success(fv);
+         }catch (SQLException ex) {
+            printError("Error in getForums: " + ex.getMessage());
+            return Result.fatal("Fatal error getForum()");
+         }
+    }
+    
+    private String getForumTitle(long id){
+       try(
+   		PreparedStatement s = c.prepareStatement(
+          "SELECT title FROM Forum WHERE id = ?;"
+   	      );
+       ){
+         s.setLong(1, id);
+         ResultSet r = s.executeQuery();
+         return r.getString("title");
+
+         }catch (SQLException ex) {
+            printError("Error in getForums: " + ex.getMessage());
+            return null;
+         }
     }
 
     @Override
@@ -743,6 +796,28 @@ http://localhost:8000/forums
             );
          ){
          s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if topic exists: " + ex.getMessage());
+         return false;
+      }
+    }
+    
+    private boolean doesForumExist(long forumId){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT Forum.id " +
+               "FROM Forum " +
+               "WHERE Forum.id = ?"
+            );
+         ){
+         s.setLong(1, forumId);
          ResultSet r = s.executeQuery();
          if(r.next()){
             return true;
