@@ -670,7 +670,9 @@ http://localhost:8000/forums
                PreparedStatement s = c.prepareStatement("INSERT INTO Person (name, username, stuId) VALUES (?,?,?);");
            ){
           if(name == null || username == null) throw new RuntimeException("Cannot have null");
-          if(name.isEmpty() || username.isEmpty() || studentId.isEmpty()) throw new RuntimeException("Cannot have empty");
+          if(name.isEmpty() || username.isEmpty()) throw new RuntimeException("Cannot have empty");
+          if("".equals(studentId)) throw new RuntimeException("Cannot have empty studentID. Must be null or valid.");
+          if(doesPersonExist(username)) return Result.failure("Username already exists");
           s.setString(1, name);
           s.setString(2, username);
           s.setString(3, studentId);
@@ -694,6 +696,11 @@ http://localhost:8000/forums
          createStatement.executeUpdate();
          c.commit();
       }catch (SQLException | RuntimeException ex) {
+         try{
+            c.rollback();
+         }catch(SQLException e){
+            System.err.println("Rollback failed in deletePerson");
+         }
           System.err.println("deletePerson Error. " + ex.getLocalizedMessage());
       }
     }
@@ -766,6 +773,13 @@ http://localhost:8000/forums
     }
 
     /**
+     * Create a new topic in a forum.
+     * @param forumId - the id of the forum in which to create the topic. This
+     * forum must exist.
+     * @param username - the username under which to make this post. Must refer
+     * to an existing username.
+     * @param title - the title of this topic. Cannot be empty.
+     * @param text - the text of the initial post. Cannot be empty.
      * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
      *         success if the post was created and
      *         fatal if something else went wrong.
@@ -908,6 +922,28 @@ http://localhost:8000/forums
          }
       }catch (SQLException ex) {
          printError("Error while querying if topic exists: " + ex.getMessage());
+         return false;
+      }
+    }
+    
+    private boolean doesPersonExist(String username){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT Person.id " +
+               "FROM Person " +
+               "WHERE Person.username = ?"
+            );
+         ){
+         s.setString(1, username);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if person exists: " + ex.getMessage());
          return false;
       }
     }
