@@ -31,7 +31,7 @@ public class API implements APIProvider {
 
    /**
     * API constructor
-    * @param c
+    * @param c The connection to the database (ensure Foreign Key Constraints are enabled) 
     */
    public API(Connection c) {
         this.c = c;
@@ -40,8 +40,8 @@ public class API implements APIProvider {
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
 
    /**
-    * <h1>FOR TESTING USE ONLY</h1>
-    * @param args
+    * <h1>For Running Tests Only</h1>
+    * @param args Not used
     */
    public static void main(String[] args){
       //SET UP FOR TESTS
@@ -374,7 +374,7 @@ public class API implements APIProvider {
    * 
    * 
    * </p>
-   * @param topicId - the topic to look at.
+   * @param topicId the topic to look at.
    * @return The number of posts in this topic if it exists, otherwise a
    * failure.
    */
@@ -460,7 +460,7 @@ public class API implements APIProvider {
    * 
    * 
    * </p>
-   * @param topicId - the topic to get.
+   * @param topicId the topic to get.
    * @return The topic view if one exists with the given id,
    * otherwise failure or fatal on database errors. 
    */
@@ -661,7 +661,7 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
-   * @param title - the title of the forum. Must not be null or empty and
+   * @param title the title of the forum. Must not be null or empty and
    * no forum with this name must exist yet.
    * @return success if the forum was created, failure if the title was
    * null, empty or such a forum already existed; fatal on other errors.
@@ -718,10 +718,10 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
-   * @param topicId - the id of the topic to post in. Must refer to
+   * @param topicId the id of the topic to post in. Must refer to
    * an existing topic.
-   * @param username - the name under which to post; user must exist.
-   * @param text - the content of the post, cannot be empty.
+   * @param username the name under which to post; user must exist.
+   * @param text the content of the post, cannot be empty.
    * @return success if the post was made, failure if any of the preconditions
    * were not met and fatal if something else went wrong.
    */    
@@ -795,9 +795,9 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
-   * @param name - the person's name, cannot be empty.
-   * @param username - the person's username, cannot be empty.
-   * @param studentId - the person's student id. May be either NULL if the
+   * @param name the person's name, cannot be empty.
+   * @param username the person's username, cannot be empty.
+   * @param studentId the person's student id. May be either NULL if the
    * person is not a student or a non-empty string if they are; can not be
    * an empty string.
    * @return Success if no person with this username existed yet and a new
@@ -856,7 +856,7 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
-   * @param id - the id of the forum to get.
+   * @param id the id of the forum to get.
    * @return A view of this forum if it exists, otherwise failure.
    */
     @Override
@@ -906,7 +906,7 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Get the detailed view of a topic.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Joseph</p>
    * <p><b>SQL:</b> </p>
@@ -915,6 +915,12 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
+   * @param topicId the topic to get.
+   * @param page if 0, fetch all posts, if n > 0, fetch posts
+   * 10*(n-1)+1 up to 10*n, where the first post is number 1.
+   * @return The topic view if one exists with the given id and range,
+   * (i.e. for getTopic(tid, 3) there must be at least 31 posts)
+   * otherwise failure (or fatal on database errors). 
    */
     @Override
     public Result<TopicView> getTopic(long topicId, int page) {
@@ -922,15 +928,22 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
-   * <p><b>Visual Test:</b> Joseph</p>
-   * <p><b>Main Contributor:</b> </p>
+   * <p>Like or unlike a topic. A topic is either liked or not, when calling this
+   * twice in a row with the same parameters, the second call is a no-op (this
+   * function is idempotent).</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Joseph</p>
    * <p><b>SQL:</b> </p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param username the person liking the topic (must exist).
+   * @param topicId the topic to like (must exist).
+   * @param like true to like, false to unlike.
+   * @return success (even if it was a no-op), failure if the person or topic
+   * does not exist and fatal in case of db errors.
    */
     @Override
     public Result likeTopic(String username, long topicId, boolean like) {
@@ -938,7 +951,7 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Set or unset a topic as favourite. Same semantics as likeTopic.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> </p>
    * <p><b>SQL:</b> </p>
@@ -947,6 +960,11 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
+   * @param username the person setting the favourite topic (must exist).
+   * @param topicId the topic to set as favourite (must exist).
+   * @param fav true to set, false to unset as favourite.
+   * @return success (even if it was a no-op), failure if the person or topic
+   * does not exist and fatal in case of db errors.
    */    
     @Override
     public Result favouriteTopic(String username, long topicId, boolean fav) {
@@ -954,15 +972,29 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <h1>DELETETOPIC NEEDS TO ROLLBACK</h1>
+   * <p>Create a new topic in a forum.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Tom</p>
-   * <p><b>SQL:</b> </p>
+   * <p><b>SQL1:</b> INSERT INTO Topic (forumid, title) VALUES (?,?);</p>
+   * <p><b>SQL2:</b> INSERT INTO Post (authorid, topicid, text) VALUES ( 
+   * (SELECT id FROM Person WHERE username = ?),
+   * (SELECT id FROM Topic WHERE title = ?),
+   * ?);</p>
    * <p>
    * <b>How it works:</b>
    * 
    * 
    * </p>
+   * @param forumId the id of the forum in which to create the topic. This
+   * forum must exist.
+   * @param username the username under which to make this post. Must refer
+   * to an existing username.
+   * @param title the title of this topic. Cannot be empty.
+   * @param text the text of the initial post. Cannot be empty.
+   * @return failure if any of the preconditions are not met (forum does not
+   * exist, user does not exist, title or text empty);
+   * success if the post was created and fatal if something else went wrong.
    */
     @Override
     public Result createTopic(long forumId, String username, String title, String text) {
@@ -1032,7 +1064,8 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Get the "main page" containing a list of forums ordered alphabetically
+   * by title. Advanced version.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> </p>
    * <p><b>SQL:</b> </p>
@@ -1041,6 +1074,7 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
+   * @return the list of all forums.
    */    
     @Override
     public Result<List<AdvancedForumSummaryView>> getAdvancedForums() {
@@ -1048,7 +1082,7 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Get an AdvancedPersonView for the person with the given username.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> </p>
    * <p><b>SQL:</b> </p>
@@ -1057,6 +1091,9 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
+   * @param username the username to search for, cannot be empty.
+   * @return If a person with the given username exists, a fully populated
+   * AdvancedPersonView. Otherwise, failure (or fatal on a database error).
    */    
     @Override
     public Result<AdvancedPersonView> getAdvancedPersonView(String username) {
@@ -1064,7 +1101,7 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Get the detailed view of a single forum, advanced version.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> </p>
    * <p><b>SQL:</b> </p>
@@ -1073,6 +1110,8 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
+   * @param id the id of the forum to get.
+   * @return A view of this forum if it exists, otherwise failure.
    */    
     @Override
     public Result<AdvancedForumView> getAdvancedForum(long id) {
@@ -1080,7 +1119,8 @@ http://localhost:8000/forums
     }
 
    /**
-   * <p></p>
+   * <p>Like or unlike a post. Liking a post that you have already liked
+   * (or unliking a post you haven't liked) is a no-op, not an error.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Alex</p>
    * <p><b>SQL:</b> </p>
@@ -1089,6 +1129,12 @@ http://localhost:8000/forums
    * 
    * 
    * </p>
+   * @param username the person liking/unliking the post. Must exist.
+   * @param topicId the topic with the post to (un)like. Must exist.
+   * @param post the index of the post to (un)like. Must exist.
+   * @param like true to like, false to unlike.
+   * @return failure if the person or post referenced to not exist,
+   * success if the (un)like succeeded, fatal in case of other errors.
    */    
     @Override
     public Result likePost(String username, long topicId, int post, boolean like) {
