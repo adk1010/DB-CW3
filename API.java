@@ -72,6 +72,15 @@ public class API implements APIProvider {
        }
     }
 
+   /**
+   * <p>Private method for unit testing API.java</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p>
+   * <b>How it works:</b> makes call to test() which checks return state
+   * equals expected return state. Prints number of tests failed and 
+   * number of tests passed.
+   * </p>
+   */
     private void tests(){
       /*
        we should make database/unitTests.sqlite3 and load that instead of
@@ -238,10 +247,28 @@ public class API implements APIProvider {
       p("Passed " + passed + " tests. Failed " + failed);
     }
 
+   /**
+   * <p>Wrapper for non-verbose printing to console</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   */
     private void p(String s){
        System.out.println(s);
     }
 
+    /**
+   * <p>Get the detailed view of a single forum.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT id as topicid, title as topictitle FROM Topic WHERE forumid = ?;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param r the result returned from method under test.
+   * @param expectedResult the result that the test expects to return
+   * @return True if expectedResult matches result(r). Else returns false.
+   */
     private boolean test(Result r, String expectedResult){
        try{
          switch(expectedResult){
@@ -688,7 +715,14 @@ http://localhost:8000/forums
       }
     }
 
-    //just for the tests
+   /**
+   * <h1>Only designed to be used for unit tests</h1>
+   * <p>Deletes forum.</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> DELETE FROM Forum WHERE title = ?;</p>
+   * <p>
+   * @param title the title of the forum to be deleted
+   */
     private void deleteForum(String title) {
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Forum WHERE title = ?;"
@@ -770,6 +804,16 @@ http://localhost:8000/forums
        }
     }
 
+   /**
+   * <h1>Only designed to be used for unit tests</h1>
+   * <p>Deletes post.</p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> DELETE FROM Post WHERE authorid = ? AND topicid = ? AND text = ?;</p>
+   * <p>
+   * @param authorid id of author of post to be deleted
+   * @param topicid id of topic of post to be deleted
+   * @param text text of the post to be deleted
+   */
     private void deletePost(long authorid, long topicid, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Post WHERE authorid = ? AND topicid = ? AND text = ?;"
@@ -780,7 +824,12 @@ http://localhost:8000/forums
          createStatement.setString(3, text);
          createStatement.executeUpdate();
          c.commit();
-      }catch (SQLException | RuntimeException ex) {
+      }catch (SQLException ex) {
+         try {
+             c.rollback();
+          } catch (SQLException ex1) {
+             System.err.println("deleteForum rollback error");
+          }
           System.err.println("deletePost Error. " + ex.getLocalizedMessage());
       }
     }
