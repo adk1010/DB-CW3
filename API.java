@@ -775,65 +775,14 @@ http://localhost:8000/forums
        s.setLong(3, (long)post);
        ResultSet r = s.executeQuery();
 
-       if (r.next()) { //if there is a post liked already
+       if (r.next()) { //If the selected post has already been liked.
           if (!like) {
-             try(
-                PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
-                "DELETE FROM Post_Likers (postid, personid) " +
-                "WHERE postid = ? AND personid = (SELECT Person.id FROM PERSON WHERE Person.username = ?);"
-                );
-             ){
-             createStatement.setLong(1, (long)post);
-             createStatement.setString(2, username);
-             createStatement.executeUpdate();
-             c.commit();
-             }catch (SQLException ex) {
-                try{
-                   c.rollback();
-                } catch(SQLException e){
-                   System.err.println("Rollback Error");
-                   throw new RuntimeException("Rollback Error");
-                } catch(RuntimeException ex){
-                   try{
-                      c.rollback();
-                   }
-                   catch(SQLException e){
-                      System.err.println("Rollback Error");
-                      throw new RuntimeException("Rollback Error");
-                   }
-                   return Result.fatal("Fatal likePost");
-                }
-             }
+             unlike(username, post);
           }
        }
-       else { //if there is not a post liked already
+       else { //If the selected post has not already been liked.
           if (like) {
-             try(
-                PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
-                   "INSERT INTO Post_Likers (postid, personid) " +
-                   "VALUES (?, (SELECT Person.id FROM PERSON WHERE Person.username = ?));"
-                );
-             ){
-             createStatement.setLong(1, (long)post);
-             createStatement.setString(2, username);
-             createStatement.executeUpdate();
-             c.commit();
-             }catch (SQLException ex) {
-                try{
-                   c.rollback();
-                } catch(SQLException e){
-                   System.err.println("Rollback Error");
-                   throw new RuntimeException("Rollback Error");
-                } catch(RuntimeException ex){
-                   try{
-                      c.rollback();
-                   } catch(SQLException e){
-                      System.err.println("Rollback Error");
-                      throw new RuntimeException("Rollback Error");
-                   }
-                   return Result.fatal("Fatal likePost");
-               }
-            }
+             like(username, post);
           }
        }
        return Result.success();
@@ -843,6 +792,66 @@ http://localhost:8000/forums
           return Result.fatal("Fatal likePost");
        }
     }
+
+    private boolean like(String username, int post) {
+       try(
+          PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
+             "INSERT INTO Post_Likers (postid, personid) " +
+             "VALUES (?, (SELECT Person.id FROM PERSON WHERE Person.username = ?));"
+          );
+       ){
+           createStatement.setLong(1, (long)post);
+           createStatement.setString(2, username);
+           createStatement.executeUpdate();
+           c.commit();
+       }catch (SQLException e) {
+          try{
+             c.rollback();
+          }catch(SQLException ex){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }catch(RuntimeException rE){
+             try{
+                c.rollback();
+             }catch(SQLException exc){
+               System.err.println("Rollback Error");
+               throw new RuntimeException("Rollback Error");
+             }
+             return Result.fatal("Fatal likePost");
+          }
+       }
+    }
+
+    private boolean unlike(String username, int post) {
+       try(
+          PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
+             "DELETE FROM Post_Likers (postid, personid) " +
+             "WHERE postid = ? AND personid = (SELECT Person.id FROM PERSON WHERE Person.username = ?);"
+          );
+       ){
+           createStatement.setLong(1, (long)post);
+           createStatement.setString(2, username);
+           createStatement.executeUpdate();
+           c.commit();
+       }catch (SQLException e) {
+          try{
+             c.rollback();
+          }catch(SQLException ex){
+             System.err.println("Rollback Error");
+             throw new RuntimeException("Rollback Error");
+          }catch(RuntimeException rE){
+             try{
+                c.rollback();
+             }catch(SQLException exc){
+               System.err.println("Rollback Error");
+               throw new RuntimeException("Rollback Error");
+             }
+             return Result.fatal("Fatal likePost");
+          }
+       }
+    }
+
+
 
     private void printError(String s){
        System.err.println(s);
