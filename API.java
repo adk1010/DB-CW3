@@ -696,6 +696,11 @@ http://localhost:8000/forums
          createStatement.executeUpdate();
          c.commit();
       }catch (SQLException | RuntimeException ex) {
+         try{
+            c.rollback();
+         }catch(SQLException e){
+            System.err.println("Rollback failed in deletePerson");
+         }
           System.err.println("deletePerson Error. " + ex.getLocalizedMessage());
       }
     }
