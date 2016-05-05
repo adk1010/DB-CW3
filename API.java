@@ -29,12 +29,21 @@ public class API implements APIProvider {
 
     private final Connection c;
 
-    public API(Connection c) {
+   /**
+    * API constructor
+    * @param c The connection to the database (ensure Foreign Key Constraints are enabled) 
+    */
+   public API(Connection c) {
         this.c = c;
     }
 
     private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-    public static void main(String[] args){
+
+   /**
+    * <h1>For Running Tests Only</h1>
+    * @param args Not used
+    */
+   public static void main(String[] args){
       //SET UP FOR TESTS
          ApplicationContext c = ApplicationContext.getInstance();
          API api;
@@ -155,17 +164,6 @@ public class API implements APIProvider {
       if(test(createPost(1,"tb1529",""), "failure")) passed++;
       else {p("Failed createPost5 - Empty text"); failed++; }
 
-      /**
-     * Create a new person.
-     * @param name - the person's name, cannot be empty.
-     * @param username - the person's username, cannot be empty.
-     * @param studentId - the person's student id. May be either NULL if the
-     * person is not a student or a non-empty string if they are; can not be
-     * an empty string.
-     * @return Success if no person with this username existed yet and a new
-     * one was created, failure if a person with this username already exists,
-     * fatal if something else went wrong.
-     */
       //--addNewPerson(String name, String username, String studentId)
       deletePerson("santababy");
       if(test(addNewPerson("santa", "santababy", "123456789"), "success")) passed++;
@@ -265,7 +263,19 @@ public class API implements APIProvider {
        }
     }
 
-   //Test with: http://localhost:8000/people
+   /**
+   * <p>Get a list of all users in the system as a map username -> name.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/people</p>
+   * <p><b>Main Contributor:</b> Joseph</p>
+   * <p><b>SQL:</b> SELECT username, name FROM Person;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @return A map with one entry per user of the form username -> name
+   * (note that usernames are unique).
+   */
    @Override
    public Result<Map<String, String>> getUsers() {
    	try(
@@ -285,14 +295,27 @@ public class API implements APIProvider {
    	return Result.fatal("Fatal getUsers");
    }
 
-   //Test with: http://localhost:8000/person/tb15269
+   /**
+   * <p>Get a PersonView for the person with the given username.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/person/tb15269</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT name, username, stuId FROM Person " + "WHERE username = ?;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param username the username to search for, cannot be empty.
+   * @return If a person with the given username exists, a fully populated
+   * PersonView. Otherwise, failure (or fatal on a database error).
+   */
    @Override
    public Result<PersonView> getPersonView(String username) {
       Params.cannotBeEmpty(username);
       Params.cannotBeNull(username);
       try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT name, username, stuId FROM Person " + "WHERE username = ?"
+               "SELECT name, username, stuId FROM Person " + "WHERE username = ?;"
             );
          ){
          s.setString(1, username);
@@ -306,8 +329,20 @@ public class API implements APIProvider {
       }
       return Result.fatal("Fatal getPersonView");
    }
-
-    //Test with: http://localhost:8000/forums0
+   
+   /**
+   * <p>Get the "main page" containing a list of forums ordered alphabetically
+   * by title. Simple version that does not return any topic information.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/forums0</p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> SELECT id, title FROM Forum;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @return the list of all forums; an empty list if there are no forums.
+   */
     @Override
     public Result<List<SimpleForumSummaryView>> getSimpleForums() {
       try(
@@ -329,12 +364,25 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getSimpleForums");
     }
 
-    //TEST WITH
+   /**
+   * <p>Count the number of posts in a topic (without fetching them all).</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param topicId the topic to look at.
+   * @return The number of posts in this topic if it exists, otherwise a
+   * failure.
+   */
     @Override
     public Result<Integer> countPostsInTopic(long topicId) {
        try{
          PreparedStatement s = c.prepareStatement(
-               "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?"
+               "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;"
             );
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
@@ -345,13 +393,26 @@ public class API implements APIProvider {
        return Result.fatal("Fatal getPostsInTopic");
     }
 
-    /*SELECT Topic.id, Person.name, Person.username, Person.stuId
-      FROM Topic
-      LEFT OUTER JOIN Topic_Likers ON Topic.id = Topic_Likers.topicid
-      LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
-      WHERE Topic.id = 7
-      ORDER BY Person.name ASC;
-    */
+   /**
+   * <p>Get all people who have liked a particular topic, ordered by name
+   * alphabetically.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Joseph</p>
+   * <p><b>SQL:</b> SELECT Topic.id, Person.name, Person.username, Person.stuId
+   * FROM Topic
+   * LEFT OUTER JOIN Topic_Likers ON topic.id = Topic_Likers.topicid
+   * LEFT OUTER JOIN Person ON Topic_Likers.personid = Person.id
+   * WHERE Topic.id = ? 
+   * ORDER BY Person.name ASC;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param topicId The topic id. Must exist.
+   * @return Success (even if the list is empty) if the topic exists,
+   * failure if it does not, fatal in case of database errors.
+   */
     @Override
     public Result<List<PersonView>> getLikers(long topicId) {
        try(
@@ -389,14 +450,20 @@ public class API implements APIProvider {
    	}
    }
 
-    /* Test with: http://localhost:8000/topic0/1
-       or
-       Test with: http://localhost:8000/topic0/2
-
-       SQL query:
-       SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;
-    */
-
+   /**
+   * <p>Get a simplified view of a topic.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/topic0/1</p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> SELECT t.id as topicid, t.title, p.id as postid, per.username, p.text, p.postedAt FROM Topic AS t JOIN Post AS p ON t.id = p.topicid JOIN Person AS per ON p.authorid = per.id WHERE t.id = 1;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param topicId the topic to get.
+   * @return The topic view if one exists with the given id,
+   * otherwise failure or fatal on database errors. 
+   */
     @Override
     public Result<SimpleTopicView> getSimpleTopic(long topicId) {
       try(
@@ -436,7 +503,31 @@ public class API implements APIProvider {
       return Result.fatal("Fatal getSimpleTopic");
     }
 
-    //testwith:
+   /**
+   * <h1>THIS NEEDS WORK - NEVER RETURNS FAILURE DOESN'T CHECK FOR TOPIC EXISTS</h1>
+   * <p>Get the latest post in a topic.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT forum.id as forumid, post.topicid as topicid, 
+   *post.id as postNumber, person.name as authorname, 
+   *person.username as username, post.text as text, 
+   *post.postedAt as postedAt, likes.numLikes as numberOfLikes 
+   *FROM Post 
+   *JOIN Person ON Post.authorid = Person.id 
+   *JOIN Topic ON Post.topicid = Topic.id 
+   *JOIN Forum ON Topic.forumid = Forum.id 
+   *JOIN (SELECT postid, count(*) as numLikes FROM Post_Likers GROUP BY postid) as Likes ON Likes.postid = Post.id 
+   *WHERE topicid = ? 
+   *ORDER BY postNumber DESC LIMIT 1;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param topicId The topic. Must exist.
+   * @return Success and a view of the latest post if one exists,
+   * failure if the topic does not exist, fatal on database errors.
+   */
     @Override
     public Result<PostView> getLatestPost(long topicId) {
        try{
@@ -503,6 +594,27 @@ GROUP BY f.title;
 Test with:
 http://localhost:8000/forums
 */
+   /**
+   * <p>Get the "main page" containing a list of forums ordered alphabetically
+   * by title.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/forums</p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
+   * FROM Forum AS f
+   * JOIN (
+   * SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
+   * FROM Topic t
+   * JOIN Post AS p ON t.id = p.topicid
+   * GROUP BY p.postedAt
+   * ) AS lastTopic ON f.id = lastTopic.forumid
+   * GROUP BY f.title;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @return the list of all forums, empty list if there are none.
+   */    
     @Override
     public Result<List<ForumSummaryView>> getForums() {
       try(
@@ -539,10 +651,21 @@ http://localhost:8000/forums
       return Result.fatal("Fatal getForums");
     }
 
-    /**
-     * @return success if the forum was created, failure if the title was
-     * null, empty or such a forum already existed; fatal on other errors.
-     */
+   /**
+   * <p>Create a new forum.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/newforum</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> INSERT INTO Forum (title) VALUES (?);</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param title the title of the forum. Must not be null or empty and
+   * no forum with this name must exist yet.
+   * @return success if the forum was created, failure if the title was
+   * null, empty or such a forum already existed; fatal on other errors.
+   */
     // Test with: http://localhost:8000/newforum
     @Override
     public Result createForum(String title) {
@@ -574,25 +697,34 @@ http://localhost:8000/forums
          createStatement.setString(1, title);
          createStatement.executeUpdate();
          c.commit();
-      }catch (SQLException | RuntimeException ex) {
+      }catch (SQLException ex) {
+          try {
+             c.rollback();
+          } catch (SQLException ex1) {
+             System.err.println("deleteForum rollback error");
+          }
           System.err.println("deleteForum Error");
       }
     }
 
-    /***
-    * Create a post in an existing topic.
-    * @param topicId - the id of the topic to post in. Must refer to
-    * an existing topic.
-    * @param username - the name under which to post; user must exist.
-    * @param text - the content of the post, cannot be empty.
-    * @return success if the post was made, failure if any of the preconditions
-    * were not met and fatal if something else went wrong.
-    **/
-
-    /*
-    Test with:                    [topic id]
-    http://localhost:8000/newpost/:id
-    */
+   /**
+   * <h1>DELETEPOST NEEDS ROLLBACK</h1>
+   * <p>Create a post in an existing topic.</p>
+   * <p><b>Visual Test:</b> http://localhost:8000/newpost/1</p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> INSERT INTO Post (authorid, topicid, text) VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?);</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param topicId the id of the topic to post in. Must refer to
+   * an existing topic.
+   * @param username the name under which to post; user must exist.
+   * @param text the content of the post, cannot be empty.
+   * @return success if the post was made, failure if any of the preconditions
+   * were not met and fatal if something else went wrong.
+   */    
     @Override
     public Result createPost(long topicId, String username, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
@@ -653,17 +785,25 @@ http://localhost:8000/forums
       }
     }
 
-    /**
-     * Create a new person.
-     * @param name - the person's name, cannot be empty.
-     * @param username - the person's username, cannot be empty.
-     * @param studentId - the person's student id. May be either NULL if the
-     * person is not a student or a non-empty string if they are; can not be
-     * an empty string.
-     * @return Success if no person with this username existed yet and a new
-     * one was created, failure if a person with this username already exists,
-     * fatal if something else went wrong.
-     */
+   /**
+   * <p>Create a new person.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> INSERT INTO Person (name, username, stuId) VALUES (?,?,?);</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param name the person's name, cannot be empty.
+   * @param username the person's username, cannot be empty.
+   * @param studentId the person's student id. May be either NULL if the
+   * person is not a student or a non-empty string if they are; can not be
+   * an empty string.
+   * @return Success if no person with this username existed yet and a new
+   * one was created, failure if a person with this username already exists,
+   * fatal if something else went wrong.
+   */
     @Override
     public Result addNewPerson(String name, String username, String studentId) {
        try(
@@ -706,11 +846,19 @@ http://localhost:8000/forums
     }
 
     
-    /**
-     * Get the detailed view of a single forum.
-     * @param id - the id of the forum to get.
-     * @return A view of this forum if it exists, otherwise failure.
-     */
+   /**
+   * <p>Get the detailed view of a single forum.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT id as topicid, title as topictitle FROM Topic WHERE forumid = ?;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param id the id of the forum to get.
+   * @return A view of this forum if it exists, otherwise failure.
+   */
     @Override
     public Result<ForumView> getForum(long id) {
        //public ForumView(long id, String title, List<SimpleTopicSummaryView> topics)
@@ -757,33 +905,97 @@ http://localhost:8000/forums
          }
     }
 
+   /**
+   * <p>Get the detailed view of a topic.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Joseph</p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param topicId the topic to get.
+   * @param page if 0, fetch all posts, if n > 0, fetch posts
+   * 10*(n-1)+1 up to 10*n, where the first post is number 1.
+   * @return The topic view if one exists with the given id and range,
+   * (i.e. for getTopic(tid, 3) there must be at least 31 posts)
+   * otherwise failure (or fatal on database errors). 
+   */
     @Override
     public Result<TopicView> getTopic(long topicId, int page) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+   /**
+   * <p>Like or unlike a topic. A topic is either liked or not, when calling this
+   * twice in a row with the same parameters, the second call is a no-op (this
+   * function is idempotent).</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Joseph</p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param username the person liking the topic (must exist).
+   * @param topicId the topic to like (must exist).
+   * @param like true to like, false to unlike.
+   * @return success (even if it was a no-op), failure if the person or topic
+   * does not exist and fatal in case of db errors.
+   */
     @Override
     public Result likeTopic(String username, long topicId, boolean like) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+   /**
+   * <p>Set or unset a topic as favourite. Same semantics as likeTopic.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> </p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param username the person setting the favourite topic (must exist).
+   * @param topicId the topic to set as favourite (must exist).
+   * @param fav true to set, false to unset as favourite.
+   * @return success (even if it was a no-op), failure if the person or topic
+   * does not exist and fatal in case of db errors.
+   */    
     @Override
     public Result favouriteTopic(String username, long topicId, boolean fav) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    /**
-     * Create a new topic in a forum.
-     * @param forumId - the id of the forum in which to create the topic. This
-     * forum must exist.
-     * @param username - the username under which to make this post. Must refer
-     * to an existing username.
-     * @param title - the title of this topic. Cannot be empty.
-     * @param text - the text of the initial post. Cannot be empty.
-     * @return failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
-     *         success if the post was created and
-     *         fatal if something else went wrong.
-     */
+   /**
+   * <h1>DELETETOPIC NEEDS TO ROLLBACK</h1>
+   * <p>Create a new topic in a forum.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL1:</b> INSERT INTO Topic (forumid, title) VALUES (?,?);</p>
+   * <p><b>SQL2:</b> INSERT INTO Post (authorid, topicid, text) VALUES ( 
+   * (SELECT id FROM Person WHERE username = ?),
+   * (SELECT id FROM Topic WHERE title = ?),
+   * ?);</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param forumId the id of the forum in which to create the topic. This
+   * forum must exist.
+   * @param username the username under which to make this post. Must refer
+   * to an existing username.
+   * @param title the title of this topic. Cannot be empty.
+   * @param text the text of the initial post. Cannot be empty.
+   * @return failure if any of the preconditions are not met (forum does not
+   * exist, user does not exist, title or text empty);
+   * success if the post was created and fatal if something else went wrong.
+   */
     @Override
     public Result createTopic(long forumId, String username, String title, String text) {
        //Create Topic
@@ -851,26 +1063,84 @@ http://localhost:8000/forums
       }
     }
 
+   /**
+   * <p>Get the "main page" containing a list of forums ordered alphabetically
+   * by title. Advanced version.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> </p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @return the list of all forums.
+   */    
     @Override
     public Result<List<AdvancedForumSummaryView>> getAdvancedForums() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+   /**
+   * <p>Get an AdvancedPersonView for the person with the given username.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> </p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param username the username to search for, cannot be empty.
+   * @return If a person with the given username exists, a fully populated
+   * AdvancedPersonView. Otherwise, failure (or fatal on a database error).
+   */    
     @Override
     public Result<AdvancedPersonView> getAdvancedPersonView(String username) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+   /**
+   * <p>Get the detailed view of a single forum, advanced version.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> </p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param id the id of the forum to get.
+   * @return A view of this forum if it exists, otherwise failure.
+   */    
     @Override
     public Result<AdvancedForumView> getAdvancedForum(long id) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+   /**
+   * <p>Like or unlike a post. Liking a post that you have already liked
+   * (or unliking a post you haven't liked) is a no-op, not an error.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> </p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param username the person liking/unliking the post. Must exist.
+   * @param topicId the topic with the post to (un)like. Must exist.
+   * @param post the index of the post to (un)like. Must exist.
+   * @param like true to like, false to unlike.
+   * @return failure if the person or post referenced to not exist,
+   * success if the (un)like succeeded, fatal in case of other errors.
+   */    
     @Override
     public Result likePost(String username, long topicId, int post, boolean like) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
+   
     private void printError(String s){
        System.err.println(s);
     }
