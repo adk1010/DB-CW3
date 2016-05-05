@@ -626,7 +626,47 @@ http://localhost:8000/forums
     @Override
     public Result<ForumView> getForum(long id) {
        //public ForumView(long id, String title, List<SimpleTopicSummaryView> topics)
-       return Result.fatal("Not yet implemented");
+       //public SimpleTopicSummaryView(long topicId, long forumId, String title)
+       if(!doesForumExist(id)) return Result.failure("Forum does not exist");
+       
+       try(
+   		PreparedStatement s = c.prepareStatement(
+          "SELECT id as topicid, title as topictitle FROM Topic WHERE forumid = ?;"
+   	      );
+       ){
+         s.setLong(1, id);
+         ResultSet r = s.executeQuery();
+
+         List<SimpleTopicSummaryView> topics = new ArrayList<>();
+         while (r.next()) {
+            SimpleTopicSummaryView topic = new SimpleTopicSummaryView(r.getLong("topicid"),
+                                                                      id,
+                                                                      r.getString("topicTitle"));
+            topics.add(topic);
+         }
+
+         ForumView fv = new ForumView(id, getForumTitle(id), topics);
+         return Result.success(fv);
+         }catch (SQLException ex) {
+            printError("Error in getForums: " + ex.getMessage());
+            return Result.fatal("Fatal error getForum()");
+         }
+    }
+    
+    private String getForumTitle(long id){
+       try(
+   		PreparedStatement s = c.prepareStatement(
+          "SELECT title FROM Forum WHERE id = ?;"
+   	      );
+       ){
+         s.setLong(1, id);
+         ResultSet r = s.executeQuery();
+         return r.getString("title");
+
+         }catch (SQLException ex) {
+            printError("Error in getForums: " + ex.getMessage());
+            return null;
+         }
     }
 
     @Override
@@ -756,6 +796,28 @@ http://localhost:8000/forums
             );
          ){
          s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if topic exists: " + ex.getMessage());
+         return false;
+      }
+    }
+    
+    private boolean doesForumExist(long forumId){
+       try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT Forum.id " +
+               "FROM Forum " +
+               "WHERE Forum.id = ?"
+            );
+         ){
+         s.setLong(1, forumId);
          ResultSet r = s.executeQuery();
          if(r.next()){
             return true;
