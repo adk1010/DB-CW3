@@ -143,11 +143,6 @@ public class API implements APIProvider {
 
 
       //--createPost
-      /* public Result createPost(long topicId, String username, String text)
-         private void deletePost(long authorid, long topicid, String text)
-
-         @return success if the post was made, failure if any of the preconditions
-         were not met and fatal if something else went wrong. */
       if(test(createPost(1,"ak15308","testPost"), "success")) passed++;
       else {p("Failed createPost1 - create with valid everything"); failed++; }
       deletePost(3, 1, "testPost");
@@ -205,9 +200,29 @@ public class API implements APIProvider {
       if(test(getForum(100), "failure")) passed++;
       else {p("Failed getForum2"); failed++; }
       
+      //--getTopic(long topicId, int page)
+      if(test(getTopic(4,0), "success")) passed++;
+      else {p("Failed getTopic1"); failed++; }
+      
+      if(test(getTopic(1,2), "failure")) passed++;
+      else {p("Failed getTopic2"); failed++; }
+      
+      //--likeTopic(String username, long topicId, boolean like)
+      if(test(likeTopic("noUser", 1, false), "failure")) passed++;
+      else {p("Failed likeTopic1"); failed++; }
+      
+      if(test(likeTopic("jl15351", 3, false), "success")) passed++;
+      else {p("Failed likeTopic2"); failed++; }
+      
+      if(test(likeTopic("ak15308", 1, true), "success")) passed++;
+      else {p("Failed likeTopic3"); failed++; }
+      
+      if(test(likeTopic("jl15351", 7, true), "success")) passed++;
+      else {p("Failed likeTopic3"); failed++; }
+      
       /*
-      getTopic(long topicId, int page)
-      likeTopic(String username, long topicId, boolean like)
+      
+      
       favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
 
@@ -907,11 +922,11 @@ http://localhost:8000/forums
 
    /**
    * <p>Get the detailed view of a topic.</p>
-   * <p><b>Visual Test:</b> </p>
+   * <p><b>Visual Test:</b>http://localhost:8000/topic/4</p>
    * <p><b>Main Contributor:</b> Joseph</p>
    * <p><b>SQL:</b> </p>
    * <p>
-   * <b>How it works:</b>
+   * <b>How it works: The base case (without page number) is fairly simple until counting post likes comes in. Since the post id is unique, this was accomplished by using a GROUP BY postid together with outer joining the post_likers table and COUNTing the number of times the postid is referred to in the post_likers table. Page numbers are handled in java by manipulating the arrayList</b>
    * 
    * 
    * </p>
@@ -924,7 +939,61 @@ http://localhost:8000/forums
    */
     @Override
     public Result<TopicView> getTopic(long topicId, int page) {
-        throw new UnsupportedOperationException("Not supported yet.");
+       try(
+         PreparedStatement s = c.prepareStatement(
+            "SELECT Topic.id AS topicid, Forum.id AS forumid, Forum.title AS forumtitle, Topic.title AS topictitle, Person.name, Person.username, Post.text, Post.postedAt, COUNT(Post_Likers.postid) AS likes " +
+            "FROM Topic " +
+            "JOIN Forum ON Topic.forumid = Forum.id " +
+            "JOIN Post ON Topic.id = Post.topicid " +
+            "JOIN Person ON Post.authorid = Person.id " +
+            "LEFT OUTER JOIN Post_Likers ON Post.id = Post_Likers.postid " +
+            "WHERE Topic.id = ? " +
+            "GROUP BY Post.id " +            
+            "ORDER BY Post.postedAt ASC;"
+   		);
+         ){
+         s.setLong(1, topicId);
+         ResultSet r = s.executeQuery();
+         
+         ArrayList<PostView> posts  = new ArrayList<>();
+         int postNumber = 0;
+         long forumId;
+         String forumName;
+         String topicName;
+         if(!r.next()){
+            return Result.failure("Failure in getTopic, topic does not exist.");
+         }
+         else{
+            postNumber++;
+            PostView post = new PostView(r.getLong("forumid"), topicId, postNumber, r.getString("name"), r.getString("username"), r.getString("text"), r.getInt("postedAt"), r.getInt("likes"));
+            posts.add(post);
+            forumId = r.getLong("forumid");
+            forumName = r.getString("forumtitle");
+            topicName = r.getString("topictitle");
+         }
+         
+         while(r.next()){
+            postNumber++;
+            PostView post = new PostView(r.getLong("forumid"), topicId, postNumber, r.getString("name"), r.getString("username"), r.getString("text"), r.getInt("postedAt"), r.getInt("likes"));
+            posts.add(post);
+         }
+         
+         if(page != 0){
+            if(posts.size() <= 10*page){
+               return Result.failure("Not enough posts in range");
+            }
+            else{
+               ArrayList<PostView> temp = new ArrayList<>(posts.subList((10*(page-1))+1,(page*10)+1));
+               posts = temp;
+            }
+         }
+         
+         TopicView topics = new TopicView(forumId, topicId, forumName, topicName, posts, page);
+         return Result.success(topics);
+   	}catch (SQLException ex) {
+         printError("Error in getTopic: " + ex.getMessage());
+   	}
+      return Result.fatal("Fatal getTopic");
     }
 
    /**
@@ -947,8 +1016,67 @@ http://localhost:8000/forums
    */
     @Override
     public Result likeTopic(String username, long topicId, boolean like) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+      if(!doesTopicExist(topicId) || !doesPersonExist(username)){
+         return Result.failure("Failure in likeTopic, person or topic does not exist");
+      }
+      
+      if(like == false){
+         try(
+   		PreparedStatement s = c.prepareStatement(
+            "DELETE FROM Topic_Likers " +
+            "WHERE topicid = ? AND personid = ( " +
+            "SELECT personid " +
+            "FROM Topic_Likers " +
+            "JOIN Person ON Topic_Likers.personid = Person.id " +          
+            "WHERE Person.username = ?);"
+   		);
+         ){
+            s.setLong(1, topicId);
+            s.setString(2, username);
+            s.executeUpdate();
+            c.commit();
+            return Result.success();
+         }
+         catch (SQLException ex) {
+            try{c.rollback();
+            }
+            catch (SQLException f) {
+               printError("Could not rollback, check database");
+            }
+            printError("Error in likeTopic: " + ex.getMessage());
+         }
+      }
+      else{
+         if(doesTopicLikeExist(username, topicId)){
+            return Result.success();
+         }
+         try(
+   		PreparedStatement s = c.prepareStatement(
+            "INSERT INTO Topic_Likers (topicid, personid) " +
+            "VALUES (?, (" +
+            "SELECT personid " +
+            "FROM Topic_Likers " +
+            "JOIN Person ON Topic_Likers.personid = Person.id " +          
+            "WHERE Person.username = ?));"
+   		);
+         ){
+            s.setLong(1, topicId);
+            s.setString(2, username);
+            s.executeUpdate();
+            c.commit();
+            return Result.success();
+         }
+         catch (SQLException ex) {
+            try{c.rollback();
+            }
+            catch (SQLException f) {
+               printError("Could not rollback, check database");
+            }
+            printError("Error in likeTopic: " + ex.getMessage());
+         }
+      }
+      return Result.fatal("Fatal likeTopic");
+   }
 
    /**
    * <p>Set or unset a topic as favourite. Same semantics as likeTopic.</p>
@@ -968,8 +1096,67 @@ http://localhost:8000/forums
    */    
     @Override
     public Result favouriteTopic(String username, long topicId, boolean fav) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+      if(!doesTopicExist(topicId) || !doesPersonExist(username)){
+         return Result.failure("Failure in favouriteTopic, person or topic does not exist");
+      }
+      
+      if(fav == false){
+         try(
+   		PreparedStatement s = c.prepareStatement(
+            "DELETE FROM Topic_Fav " +
+            "WHERE topicid = ? AND personid = ( " +
+            "SELECT personid " +
+            "FROM Topic_Fav " +
+            "JOIN Person ON Topic_Fav.personid = Person.id " +          
+            "WHERE Person.username = ?);"
+   		);
+         ){
+            s.setLong(1, topicId);
+            s.setString(2, username);
+            s.executeUpdate();
+            c.commit();
+            return Result.success();
+         }
+         catch (SQLException ex) {
+            try{c.rollback();
+            }
+            catch (SQLException f) {
+               printError("Could not rollback, check database");
+            }
+            printError("Error in favouriteTopic: " + ex.getMessage());
+         }
+      }
+      else{
+         if(doesTopicFavExist(username, topicId)){
+            return Result.success();
+         }
+         try(
+   		PreparedStatement s = c.prepareStatement(
+            "INSERT INTO Topic_Fav (topicid, personid) " +
+            "VALUES (?, (" +
+            "SELECT personid " +
+            "FROM Topic_Fav " +
+            "JOIN Person ON Topic_Fav.personid = Person.id " +          
+            "WHERE Person.username = ?));"
+   		);
+         ){
+            s.setLong(1, topicId);
+            s.setString(2, username);
+            s.executeUpdate();
+            c.commit();
+            return Result.success();
+         }
+         catch (SQLException ex) {
+            try{c.rollback();
+            }
+            catch (SQLException f) {
+               printError("Could not rollback, check database");
+            }
+            printError("Error in likeTopic: " + ex.getMessage());
+         }
+      }
+      return Result.fatal("Fatal likeTopic");
+   }
 
    /**
    * <h1>DELETETOPIC NEEDS TO ROLLBACK</h1>
@@ -1217,5 +1404,58 @@ http://localhost:8000/forums
          return false;
       }
     }
-
-   }
+    
+    private boolean doesTopicLikeExist(String username, long topicId){
+      try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT topicid, personid " +
+               "FROM Topic_Likers " +      
+               "WHERE topicid = ? AND personid = ( " +
+               "SELECT personid " +
+               "FROM Topic_Likers " +
+               "JOIN Person ON Topic_Likers.personid = Person.id " +          
+               "WHERE Person.username = ?);"
+            );
+         ){
+         s.setLong(1, topicId);
+         s.setString(2, username);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if like exists: " + ex.getMessage());
+         return false;
+      }
+    }
+    
+    private boolean doesTopicFavExist(String username, long topicId){
+      try(
+            PreparedStatement s = c.prepareStatement(
+               "SELECT topicid, personid " +
+               "FROM Topic_Fav " +      
+               "WHERE topicid = ? AND personid = ( " +
+               "SELECT personid " +
+               "FROM Topic_Fav " +
+               "JOIN Person ON Topic_Fav.personid = Person.id " +          
+               "WHERE Person.username = ?);"
+            );
+         ){
+         s.setLong(1, topicId);
+         s.setString(2, username);
+         ResultSet r = s.executeQuery();
+         if(r.next()){
+            return true;
+         }
+         else{
+            return false;
+         }
+      }catch (SQLException ex) {
+         printError("Error while querying if favourite exists: " + ex.getMessage());
+         return false;
+      }
+    }
+}
