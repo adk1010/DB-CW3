@@ -272,9 +272,26 @@ public class API implements APIProvider {
 
       /*getAdvancedForums()
       getAdvancedPersonView(String username)
-      getAdvancedForum(long id)
-      likePost(String username, long topicId, int post, boolean like)
-       */
+      getAdvancedForum(long id)*/
+      
+      
+      //--likePost(String username, long topicId, int post, boolean like)
+      if( (test(likePost("ak15308", 4, 11, true), "success")) && (postLikeExists(1, 11)) ) passed++;
+      else {p("Failed likePost1 - like a post that has not been liked by the user."); failed++; }
+
+      if( (test(likePost("ak15308", 4, 11, true), "success")) ) passed++;
+      else {p("Failed likePost2 - like a post that has already been liked by the user."); failed++; }
+      deletePostLike(11, 1);
+
+      if( (test(likePost("", 4, 11, true), "failure")) ) passed++;
+      else {p("Failed likePost3 - empty username."); failed++; }
+
+      if( (test(likePost("ak15308", 44, 11, true), "failure")) ) passed++;
+      else {p("Failed likePost4 - topic does not exist."); failed++; }
+
+      if( (test(likePost("ak15308", 4, 111, true), "failure")) ) passed++;
+      else {p("Failed likePost5 - post does not exist."); failed++; }
+      
       p("Passed " + passed + " tests. Failed " + failed);
    }
 
@@ -1483,7 +1500,87 @@ http://localhost:8000/forums
     */
    @Override
    public Result likePost(String username, long topicId, int post, boolean like) {
-      throw new UnsupportedOperationException("Not supported yet.");
+      if ( (!doesPersonExist(username)) || (!doesTopicExist(topicId)) || (!doesPostExist((long)post)) ) {
+         return Result.failure("Failure: referenced person, post or topic do not exist.");
+      }
+      try(
+         PreparedStatement s = c.prepareStatement( // this gets post likers with this info
+            "SELECT per.username, t.id AS idOfTopicOfLikedPost, pst.id AS idOfLikedPost " +
+            "FROM Post_Likers AS pl " +
+            "JOIN Person AS per ON pl.personid = per.id " +
+            "JOIN Post AS pst ON pl.postid = pst.id " +
+            "JOIN Topic AS t ON pst.topicid = t.id " +
+            "WHERE per.username = ? AND t.id = ? AND pst.id = ?;"
+         );
+      ){
+      s.setString(1, username);
+      s.setLong(2, topicId);
+      s.setLong(3, (long)post);
+      ResultSet r = s.executeQuery();
+
+      if (r.next()) { //If the selected post has already been liked.
+         if (!like) {
+            executeUnlike(username, post);
+         }
+      }
+      else { //If the selected post has not already been liked.
+         if (like) {
+            executeLike(username, post);
+         }
+      }
+      return Result.success();
+
+      }catch (SQLException ex) {
+         printError("Error in likePost: " + ex.getMessage());
+         return Result.fatal("Fatal likePost");
+      }
+   }
+   
+   /**
+    * WRITE ME
+    * <p>
+    * Utility function for printing an error to screen</p>
+    *
+    * @param s error message to print
+    */
+   private void executeLike(String username, int post){
+      try(
+         PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
+            "INSERT INTO Post_Likers (postid, personid) " +
+            "VALUES (?, (SELECT Person.id FROM PERSON WHERE Person.username = ?));"
+         );
+      ){
+          createStatement.setLong(1, (long)post);
+          createStatement.setString(2, username);
+          createStatement.executeUpdate();
+          c.commit();
+      }catch (SQLException e) {
+         rollback(c);
+      }
+   }
+   
+   
+    /**
+    * WRITE ME
+    * <p>
+    * Utility function for printing an error to screen</p>
+    *
+    * @param s error message to print
+    */
+   private void executeUnlike(String username, int post){
+      try(
+         PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
+            "DELETE FROM Post_Likers (postid, personid) " +
+            "WHERE postid = ? AND personid = (SELECT Person.id FROM PERSON WHERE Person.username = ?);"
+         );
+      ){
+          createStatement.setLong(1, (long)post);
+          createStatement.setString(2, username);
+          createStatement.executeUpdate();
+          c.commit();
+      }catch (SQLException e) {
+         rollback(c);
+      }
    }
 
    /**
@@ -1566,6 +1663,86 @@ http://localhost:8000/forums
          return false;
       }
    }
+   
+   /**
+    * <p>
+    * Utility function for checking if a Post exists</p>
+    * <p>
+    * <b>SQL:</b> SELECT Post.id FROM Post WHERE Post.id = ?;</p>
+    *
+    * @param username to search for
+    * @return true if exists, false if not.
+    */
+   private boolean doesPostExist(long postId) {
+      try (
+              PreparedStatement s = c.prepareStatement(
+                      "SELECT id FROM Post WHERE id = ?;"
+              );) {
+         s.setLong(1, postId);
+         ResultSet r = s.executeQuery();
+         return r.next();
+      } catch (SQLException ex) {
+         printError("Error while querying if post exists: " + ex.getMessage());
+         return false;
+      }
+   }
+   
+   /**
+    * <p>
+    * Utility function for checking if a Post exists</p>
+    * <p>
+    * <b>SQL:</b> SELECT Post.id FROM Post WHERE Post.id = ?;</p>
+    *
+    * @param username to search for
+    * @return true if exists, false if not.
+    */
+   private boolean postLikeExists(long postid, long personid) {
+      try (
+         PreparedStatement s = c.prepareStatement(
+            "SELECT postid, personid " +
+            "FROM Post_Likers " +
+            "WHERE postid = ? AND personid = ?;"
+         );
+       ){
+          s.setLong(1, postid);
+          s.setLong(2, personid);
+          ResultSet r = s.executeQuery();
+          r.next();
+          return true;
+      } catch (SQLException ex) {
+         printError("Error while querying if post like exists: " + ex.getMessage());
+         return false;
+      }
+   }
+   
+   /**
+    * <p>
+    * Utility function for checking if a Post exists</p>
+    * <p>
+    * <b>SQL:</b> SELECT Post.id FROM Post WHERE Post.id = ?;</p>
+    *
+    * @param username to search for
+    * @return true if exists, false if not.
+    */
+   private void deletePostLike(long postid, long personid){
+      try( PreparedStatement createStatement = c.prepareStatement(
+              "DELETE FROM Post_Likers WHERE postid = ? AND personid = ?;"
+           );
+        ){
+        createStatement.setLong(1, postid);
+        createStatement.setLong(2, personid);
+        createStatement.executeUpdate();
+        c.commit();
+     }catch (SQLException | RuntimeException ex) {
+        try {
+           c.rollback();
+        } catch (SQLException e) {
+           System.err.println("Rollback failed in deletePostLike");
+        }
+        System.err.println("deletePostLike Error. " + ex.getLocalizedMessage());
+     }
+   }
+   
 
    /**
     * <p>
