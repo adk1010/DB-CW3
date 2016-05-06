@@ -13,6 +13,7 @@ javadoc -private -d javadoc API.java
 package uk.ac.bris.cs.databases.cwk3;
 
 import java.sql.*;
+import java.time.Instant;
 //import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
@@ -781,8 +782,8 @@ http://localhost:8000/forums
     @Override
     public Result createPost(long topicId, String username, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
-          "INSERT INTO Post (authorid, topicid, text) " +
-          "VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?);"
+          "INSERT INTO Post (authorid, topicid, text, postedAt) " +
+          "VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?, ?);"
           );
        ){
           if(username == null || text == null) throw new RuntimeException("Cannot have null");
@@ -792,7 +793,8 @@ http://localhost:8000/forums
           createStatement.setString(1, username);
           createStatement.setLong(2, topicId);
           createStatement.setString(3, text);
-
+          createStatement.setLong(4, Instant.now().getEpochSecond());
+          
           createStatement.executeUpdate();
           c.commit();
 
@@ -1262,10 +1264,10 @@ http://localhost:8000/forums
                   "INSERT INTO Topic (forumid, title) VALUES (?,?);"
                );
                PreparedStatement newPost = c.prepareStatement(
-                  "INSERT INTO Post (authorid, topicid, text) VALUES ("
+                  "INSERT INTO Post (authorid, topicid, text, postedAt) VALUES ("
                 + "(SELECT id FROM Person WHERE username = ?),"
                 + "(SELECT id FROM Topic WHERE title = ?),"
-                + "?);"
+                + "?,?);"
                )
             ){
          if(username == null || title == null || text == null) throw new RuntimeException("Cannot have null");
@@ -1275,6 +1277,7 @@ http://localhost:8000/forums
          newPost.setString(1, username);
          newPost.setString(2, title);
          newPost.setString(3, text);
+         newPost.setLong(4, Instant.now().getEpochSecond());
          newTopic.executeUpdate();
          newPost.executeUpdate();
          c.commit();
