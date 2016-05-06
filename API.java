@@ -190,7 +190,7 @@ public class API implements APIProvider {
       */
 
       //likePost(String username, long topicId, int post, boolean like)
-      if( (test(likePost("ak15308", 4, 11, false), "success")) && postLikeExists(1, 11) ) passed++;
+      if( (test(likePost("ak15308", 4, 11, true), "success")) && postLikeExists(1, 11) ) passed++;
       else {p("Failed likePost1 - like a post that has not been liked by the user."); failed++; }
       deletePostLike(11, 1);
 
@@ -959,7 +959,12 @@ http://localhost:8000/forums
         createStatement.executeUpdate();
         c.commit();
      }catch (SQLException | RuntimeException ex) {
-         System.err.println("deletePostLike Error. " + ex.getLocalizedMessage());
+        try {
+           c.rollback();
+        } catch (SQLException e) {
+           System.err.println("Rollback failed in deletePostLike");
+        }
+        System.err.println("deletePostLike Error. " + ex.getLocalizedMessage());
      }
    }
 
