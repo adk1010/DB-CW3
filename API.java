@@ -120,7 +120,7 @@ public class API implements APIProvider {
       if(test(getLatestPost(1), "success")) passed++;
       else {p("Failed getLatestPost1"); failed++; }
 
-      if(test(getLatestPost(100), "fatal")) passed++;
+      if(test(getLatestPost(100), "failure")) passed++;
       else {p("Failed getLatestPost2"); failed++; }
 
       //--getForums
@@ -559,6 +559,7 @@ public class API implements APIProvider {
                "WHERE topicid = ? " +
                "ORDER BY postNumber DESC LIMIT 1;"
             );
+         if(!doesTopicExist(topicId)) return Result.failure("Topic does not exist");
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
 
@@ -688,8 +689,8 @@ http://localhost:8000/forums
                "INSERT INTO Forum (title) VALUES (?);"
             );
          ){
-         if(title == null) throw new RuntimeException("Cannot have forum with null title");
-         if(title.isEmpty()) throw new RuntimeException("Cannot have forum with no title");
+         if(title == null) return Result.failure("Cannot have forum with null title");
+         if(title.isEmpty()) return Result.failure("Cannot have forum with no title");
          createStatement.setString(1, title);
          createStatement.executeUpdate();
          c.commit();
@@ -698,8 +699,6 @@ http://localhost:8000/forums
          if(ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title"))
             return Result.failure(ex.getMessage());
          else return Result.fatal(ex.getMessage());
-      }catch (RuntimeException ex){
-         return Result.failure(ex.getMessage());
       }
     }
 
@@ -723,7 +722,7 @@ http://localhost:8000/forums
     }
 
    /**
-   * <h1>DELETEPOST NEEDS ROLLBACK</h1>
+   * <h1> rewrite to not use getLocalizedMessage</h1>
    * <p>Create a post in an existing topic.</p>
    * <p><b>Visual Test:</b> http://localhost:8000/newpost/1</p>
    * <p><b>Main Contributor:</b> Alex</p>
@@ -747,9 +746,9 @@ http://localhost:8000/forums
           "VALUES ((SELECT id FROM Person WHERE username = ?), ?, ?);"
           );
        ){
-          if(username == null || text == null) throw new RuntimeException("Cannot have null");
+          if(username == null || text == null) return Result.failure("Cannot have null");
           // Error message on website says "Error - missing 'text'". Different to below?
-          if(username.isEmpty() || text.isEmpty()) throw new RuntimeException("Cannot have empty");
+          if(username.isEmpty() || text.isEmpty()) return Result.failure("Cannot have empty");
 
           createStatement.setString(1, username);
           createStatement.setLong(2, topicId);
@@ -773,15 +772,6 @@ http://localhost:8000/forums
           else if(ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid"))
             return Result.failure(ex.getLocalizedMessage());
           else return Result.fatal("Create post fatal error");
-       } catch(RuntimeException ex){
-          try{
-             c.rollback();
-          }
-          catch(SQLException e){
-             System.err.println("Rollback Error");
-             throw new RuntimeException("Rollback Error");
-          }
-          return Result.failure("Create post failed");
        }
     }
 
