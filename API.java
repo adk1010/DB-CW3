@@ -1546,11 +1546,7 @@ http://localhost:8000/forums
               );) {
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
-         if (r.next()) {
-            return true;
-         } else {
-            return false;
-         }
+         return r.next();
       } catch (SQLException ex) {
          printError("Error while querying if topic exists: " + ex.getMessage());
          return false;
@@ -1573,11 +1569,7 @@ http://localhost:8000/forums
               );) {
          s.setLong(1, forumId);
          ResultSet r = s.executeQuery();
-         if (r.next()) {
-            return true;
-         } else {
-            return false;
-         }
+         return r.next();
       } catch (SQLException ex) {
          printError("Error while querying if topic exists: " + ex.getMessage());
          return false;
@@ -1600,11 +1592,7 @@ http://localhost:8000/forums
               );) {
          s.setString(1, username);
          ResultSet r = s.executeQuery();
-         if (r.next()) {
-            return true;
-         } else {
-            return false;
-         }
+         return r.next();
       } catch (SQLException ex) {
          printError("Error while querying if person exists: " + ex.getMessage());
          return false;
@@ -1625,11 +1613,7 @@ http://localhost:8000/forums
          s.setLong(1, topicId);
          s.setString(2, username);
          ResultSet r = s.executeQuery();
-         if (r.next()) {
-            return true;
-         } else {
-            return false;
-         }
+         return r.next();
       } catch (SQLException ex) {
          printError("Error while querying if like exists: " + ex.getMessage());
          return false;
@@ -1650,11 +1634,7 @@ http://localhost:8000/forums
          s.setLong(1, topicId);
          s.setString(2, username);
          ResultSet r = s.executeQuery();
-         if (r.next()) {
-            return true;
-         } else {
-            return false;
-         }
+         return r.next();
       } catch (SQLException ex) {
          printError("Error while querying if favourite exists: " + ex.getMessage());
          return false;
