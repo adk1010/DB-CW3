@@ -435,9 +435,9 @@ public class API implements APIProvider {
          ResultSet r = s.executeQuery();
          return Result.success(r.getInt("numposts"));
        }catch(SQLException ex){
-         printError("Error in getSimpleTopic: " + ex.getMessage());
+         printError("Error in countPostsInTopic: " + ex.getMessage());
        }
-       return Result.fatal("Fatal getPostsInTopic");
+       return Result.fatal("Fatal countPostsInTopic");
     }
 
    /**
@@ -528,9 +528,11 @@ public class API implements APIProvider {
          String topicTitle = r.getString("title");
 
          //Collect post and add to list
+         int postNumber = 0;
          List<SimplePostView> simplePostsList = new ArrayList<>();
          while (r.next()) {
-            SimplePostView spv = new SimplePostView(r.getInt("postid"),
+            postNumber++;
+            SimplePostView spv = new SimplePostView(postNumber,
                                                     r.getString("username"),
                                                     r.getString("text"),
                                                     r.getInt("postedAt"));
