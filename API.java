@@ -52,7 +52,7 @@ public class API implements APIProvider {
     */
    public static void main(String[] args) {
       //SET UP FOR TESTS
-      String DATABASE = "jdbc:sqlite:database/database.sqlite3";
+      String DATABASE = "jdbc:sqlite:database/testDatabase.sqlite3";
       ApplicationContext c = ApplicationContext.getInstance();
       API api;
       Connection conn;
@@ -148,7 +148,7 @@ public class API implements APIProvider {
 
       //--getForums
       if (test(getForums(), "success")) passed++;
-     else { p("Failed getForums"); failed++; }
+      else { p("Failed getForums"); failed++; }
 
       //--createForum
       if (test(createForum("test"), "success")) passed++;
@@ -222,6 +222,9 @@ public class API implements APIProvider {
 
       if (test(getForum(100), "failure")) passed++;
       else { p("Failed getForum2"); failed++; }
+      
+      if (test(getForum(5), "failure")) passed++;
+      else { p("Failed getForum3 - forum with no topics"); failed++; }
 
       //--getTopic(long topicId, int page)
       if (test(getTopic(4, 0), "success")) passed++;
