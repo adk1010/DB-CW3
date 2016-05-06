@@ -108,287 +108,140 @@ public class API implements APIProvider {
       }
 
       //--getPersonView
-      if (test(getPersonView("tb15269"), "success")) {
-         passed++;
-      } else {
-         p("Failed getPersonView 1");
-         failed++;
-      }
+      if (test(getPersonView("tb15269"), "success")) passed++;
+      else { p("Failed getPersonView 1"); failed++; }
 
-      if (test(getPersonView("tb1269"), "fatal")) {
-         passed++;
-      } else {
-         p("Failed getPersonView 2");
-         failed++;
-      }
+      if (test(getPersonView("tb1269"), "fatal")) passed++;
+      else { p("Failed getPersonView 2"); failed++; }
 
       //--getSimpleForums
-      if (test(getSimpleForums(), "success")) {
-         passed++;
-      } else {
-         p("Failed getUsers");
-         failed++;
-      }
+      if (test(getSimpleForums(), "success")) passed++;
+      else { p("Failed getUsers"); failed++; }
 
       //--countPostsInTopic
-      if (test(countPostsInTopic(1), "success")) {
-         passed++;
-      } else {
-         p("Failed countPostsInTopic");
-         failed++;
-      }
+      if (test(countPostsInTopic(1), "success")) passed++;
+      else { p("Failed countPostsInTopic"); failed++; }
 
       //--getLikers
-      if (test(getLikers(1), "success")) {
-         passed++;
-      } else {
-         p("Failed getLikers1");
-         failed++;
-      }
+      if (test(getLikers(1), "success")) passed++;
+      else { p("Failed getLikers1"); failed++; }
 
-      if (test(getLikers(100), "failure")) {
-         passed++;
-      } else {
-         p("Failed getLikers2");
-         failed++;
-      }
+      if (test(getLikers(100), "failure")) passed++;
+      else { p("Failed getLikers2"); failed++; }
 
-      if (test(getLikers(7), "success")) {
-         passed++;
-      } else {
-         p("Failed getLikers3");
-         failed++;
-      }
+      if (test(getLikers(7), "success")) passed++;
+      else { p("Failed getLikers3"); failed++; }
 
       //--getSimpleTopic
-      if (test(getSimpleTopic(1), "success")) {
-         passed++;
-      } else {
-         p("Failed getSimpleTopic1");
-         failed++;
-      }
+      if (test(getSimpleTopic(1), "success")) passed++;
+      else { p("Failed getSimpleTopic1"); failed++; }
 
-      if (test(getSimpleTopic(100), "fatal")) {
-         passed++;
-      } else {
-         p("Failed getSimpleTopic2");
-         failed++;
-      }
+      if (test(getSimpleTopic(100), "fatal")) passed++;
+      else { p("Failed getSimpleTopic2"); failed++; }
 
       //--getLatestPost
-      if (test(getLatestPost(1), "success")) {
-         passed++;
-      } else {
-         p("Failed getLatestPost1");
-         failed++;
-      }
+      if (test(getLatestPost(1), "success")) passed++;
+      else { p("Failed getLatestPost1"); failed++; }
 
-      if (test(getLatestPost(100), "failure")) {
-         passed++;
-      } else {
-         p("Failed getLatestPost2");
-         failed++;
-      }
+      if (test(getLatestPost(100), "failure")) passed++;
+      else { p("Failed getLatestPost2"); failed++; }
 
       //--getForums
-      if (test(getForums(), "success")) {
-         passed++;
-      } else {
-         p("Failed getForums");
-         failed++;
-      }
+      if (test(getForums(), "success")) passed++;
+     else { p("Failed getForums"); failed++; }
 
       //--createForum
-      if (test(createForum("test"), "success")) {
-         passed++;
-      } else {
-         p("Failed createForum1 - simple create test");
-         failed++;
-      }
+      if (test(createForum("test"), "success")) passed++;
+      else { p("Failed createForum1 - simple create test"); failed++; }
       deleteForum("test");
 
-      if (test(createForum("Politics"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createForum2 - creating duplicate");
-         failed++;
-      }
+      if (test(createForum("Politics"), "failure")) passed++;
+      else { p("Failed createForum2 - creating duplicate"); failed++; }
 
-      if (test(createForum(null), "failure")) {
-         passed++;
-      } else {
-         p("Failed createForum3 - create with null title");
-         failed++;
-      }
+      if (test(createForum(null), "failure")) passed++;
+      else { p("Failed createForum3 - create with null title"); failed++; }
 
-      if (test(createForum(""), "failure")) {
-         passed++;
-      } else {
-         p("Failed createForum4 - create with empty title");
-         failed++;
-      }
+      if (test(createForum(""), "failure")) passed++; 
+      else { p("Failed createForum4 - create with empty title"); failed++; }
 
       //--createPost
-      if (test(createPost(1, "ak15308", "testPost"), "success")) {
-         passed++;
-      } else {
-         p("Failed createPost1 - create with valid everything");
-         failed++;
-      }
+      if (test(createPost(1, "ak15308", "testPost"), "success")) passed++;
+      else { p("Failed createPost1 - create with valid everything"); failed++; }
       deletePost(3, 1, "testPost");
 
-      if (test(createPost(100, "tb15269", "testPost"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createPost2 - Topic does not exist");
-         failed++;
-      }
+      if (test(createPost(100, "tb15269", "testPost"), "failure")) passed++; 
+      else { p("Failed createPost2 - Topic does not exist"); failed++; }
 
-      if (test(createPost(1, "tb1529", "testPost"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createPost3 - User does not exist");
-         failed++;
-      }
+      if (test(createPost(1, "tb1529", "testPost"), "failure")) passed++;
+      else { p("Failed createPost3 - User does not exist"); failed++; }
 
-      if (test(createPost(1, "", "testPost"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createPost4 - Empty username");
-         failed++;
-      }
+      if (test(createPost(1, "", "testPost"), "failure")) passed++;
+      else { p("Failed createPost4 - Empty username"); failed++; }
 
-      if (test(createPost(1, "tb1529", ""), "failure")) {
-         passed++;
-      } else {
-         p("Failed createPost5 - Empty text");
-         failed++;
+      if (test(createPost(1, "tb1529", ""), "failure")) passed++; 
+      else { p("Failed createPost5 - Empty text"); failed++;
       }
 
       //--addNewPerson(String name, String username, String studentId)
       deletePerson("santababy");
-      if (test(addNewPerson("santa", "santababy", "123456789"), "success")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson1");
-         failed++;
-      }
+      if (test(addNewPerson("santa", "santababy", "123456789"), "success")) passed++;
+      else { p("Failed addNewPerson1"); failed++; }
       //don't delete next tests for the overwrite
 
-      if (test(addNewPerson("santa", "santababy", "123456789"), "failure")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson2");
-         failed++;
-      }
+      if (test(addNewPerson("santa", "santababy", "123456789"), "failure")) passed++;
+      else { p("Failed addNewPerson2"); failed++; }
       deletePerson("santababy");
 
-      if (test(addNewPerson("", "santababy", "123456789"), "fatal")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson3");
-         failed++;
-      }
+      if (test(addNewPerson("", "santababy", "123456789"), "fatal")) { passed++; } 
+      else { p("Failed addNewPerson3"); failed++; }
       deletePerson("santababy");
 
-      if (test(addNewPerson(null, "santababy", "123456789"), "fatal")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson4");
-         failed++;
-      }
+      if (test(addNewPerson(null, "santababy", "123456789"), "fatal")) passed++;
+      else { p("Failed addNewPerson4"); failed++; }
       deletePerson("santababy");
 
-      if (test(addNewPerson("santa", "", "123456789"), "fatal")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson5");
-         failed++;
-      }
+      if (test(addNewPerson("santa", "", "123456789"), "fatal")) passed++;
+      else { p("Failed addNewPerson5"); failed++; }
       deletePerson("santababy");
 
-      if (test(addNewPerson("santa", null, "123456789"), "fatal")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson6");
-         failed++;
-      }
+      if (test(addNewPerson("santa", null, "123456789"), "fatal")) passed++;
+      else { p("Failed addNewPerson6"); failed++; }
       deletePerson("santababy");
 
-      if (test(addNewPerson("santa", "santababy", ""), "fatal")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson7");
-         failed++;
-      }
+      if (test(addNewPerson("santa", "santababy", ""), "fatal")) passed++;
+      else { p("Failed addNewPerson7"); failed++; }
       deletePerson("santababy");
 
-      if (test(addNewPerson("santa", "santababy", null), "success")) {
-         passed++;
-      } else {
-         p("Failed addNewPerson8");
-         failed++;
-      }
+      if (test(addNewPerson("santa", "santababy", null), "success")) passed++;
+      else { p("Failed addNewPerson8"); failed++; }
       deletePerson("santababy");
 
       //--getForum(long id)
-      if (test(getForum(1), "success")) {
-         passed++;
-      } else {
-         p("Failed getForum1");
-         failed++;
-      }
+      if (test(getForum(1), "success")) passed++; 
+      else { p("Failed getForum1"); failed++; }
 
-      if (test(getForum(100), "failure")) {
-         passed++;
-      } else {
-         p("Failed getForum2");
-         failed++;
-      }
+      if (test(getForum(100), "failure")) passed++;
+      else { p("Failed getForum2"); failed++; }
 
       //--getTopic(long topicId, int page)
-      if (test(getTopic(4, 0), "success")) {
-         passed++;
-      } else {
-         p("Failed getTopic1");
-         failed++;
-      }
+      if (test(getTopic(4, 0), "success")) passed++;
+      else { p("Failed getTopic1"); failed++; }
 
-      if (test(getTopic(1, 2), "failure")) {
-         passed++;
-      } else {
-         p("Failed getTopic2");
-         failed++;
-      }
+      if (test(getTopic(1, 2), "failure")) passed++;
+      else { p("Failed getTopic2"); failed++; }
 
       //--likeTopic(String username, long topicId, boolean like)
-      if (test(likeTopic("noUser", 1, false), "failure")) {
-         passed++;
-      } else {
-         p("Failed likeTopic1");
-         failed++;
-      }
+      if (test(likeTopic("noUser", 1, false), "failure")) passed++;
+      else { p("Failed likeTopic1"); failed++; }
 
-      if (test(likeTopic("jl15351", 3, false), "success")) {
-         passed++;
-      } else {
-         p("Failed likeTopic2");
-         failed++;
-      }
+      if (test(likeTopic("jl15351", 3, false), "success")) passed++;
+      else { p("Failed likeTopic2"); failed++; }
 
-      if (test(likeTopic("ak15308", 1, true), "success")) {
-         passed++;
-      } else {
-         p("Failed likeTopic3");
-         failed++;
-      }
+      if (test(likeTopic("ak15308", 1, true), "success")) passed++;
+      else { p("Failed likeTopic3"); failed++; }
 
-      if (test(likeTopic("jl15351", 7, true), "success")) {
-         passed++;
-      } else {
-         p("Failed likeTopic3");
-         failed++;
-      }
+      if (test(likeTopic("jl15351", 7, true), "success")) passed++;
+      else { p("Failed likeTopic3"); failed++; }
 
       /*
       
@@ -397,41 +250,21 @@ public class API implements APIProvider {
       //LEVEL 3*/
       //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
-      if (test(createTopic(1, "tb15269", "testTopic", "This is some test text"), "success")) {
-         passed++;
-      } else {
-         p("Failed createTopic1 - create with valid everything");
-         failed++;
-      }
+      if (test(createTopic(1, "tb15269", "testTopic", "This is some test text"), "success")) passed++;
+      else { p("Failed createTopic1 - create with valid everything"); failed++; }
       deleteTopic(0, "testTopic");
 
-      if (test(createTopic(100, "tb15269", "testTopic", "This is some test text"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createTopic2 - Forum does not exist");
-         failed++;
-      }
+      if (test(createTopic(100, "tb15269", "testTopic", "This is some test text"), "failure")) passed++;
+      else { p("Failed createTopic2 - Forum does not exist"); failed++; }
 
-      if (test(createTopic(1, "tb1529", "testTopic", "This is some test text"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createTopic3 - User does not exist");
-         failed++;
-      }
+      if (test(createTopic(1, "tb1529", "testTopic", "This is some test text"), "failure")) passed++;
+      else { p("Failed createTopic3 - User does not exist"); failed++; }
 
-      if (test(createTopic(1, "tb1529", "", "This is some test text"), "failure")) {
-         passed++;
-      } else {
-         p("Failed createTopic4 - Empty Title");
-         failed++;
-      }
+      if (test(createTopic(1, "tb1529", "", "This is some test text"), "failure")) passed++;
+      else { p("Failed createTopic4 - Empty Title"); failed++; }
 
-      if (test(createTopic(1, "tb1529", "testTopic", ""), "failure")) {
-         passed++;
-      } else {
-         p("Failed createTopic5 - Empty Text");
-         failed++;
-      }
+      if (test(createTopic(1, "tb1529", "testTopic", ""), "failure")) passed++;
+      else { p("Failed createTopic5 - Empty Text"); failed++; }
 
       /*getAdvancedForums()
       getAdvancedPersonView(String username)
