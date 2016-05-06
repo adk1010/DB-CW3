@@ -143,11 +143,6 @@ public class API implements APIProvider {
 
 
       //--createPost
-      /* public Result createPost(long topicId, String username, String text)
-         private void deletePost(long authorid, long topicid, String text)
-
-         @return success if the post was made, failure if any of the preconditions
-         were not met and fatal if something else went wrong. */
       if(test(createPost(1,"ak15308","testPost"), "success")) passed++;
       else {p("Failed createPost1 - create with valid everything"); failed++; }
       deletePost(3, 1, "testPost");
@@ -205,15 +200,14 @@ public class API implements APIProvider {
       if(test(getForum(100), "failure")) passed++;
       else {p("Failed getForum2"); failed++; }
       
-      //getTopic(long topicId, int page)
-      
+      //--getTopic(long topicId, int page)
       if(test(getTopic(4,0), "success")) passed++;
       else {p("Failed getTopic1"); failed++; }
       
       if(test(getTopic(1,2), "failure")) passed++;
       else {p("Failed getTopic2"); failed++; }
       
-      //likeTopic(String username, long topicId, boolean like)
+      //--likeTopic(String username, long topicId, boolean like)
       if(test(likeTopic("noUser", 1, false), "failure")) passed++;
       else {p("Failed likeTopic1"); failed++; }
       
@@ -989,7 +983,7 @@ http://localhost:8000/forums
                return Result.failure("Not enough posts in range");
             }
             else{
-               ArrayList<PostView> temp = new ArrayList<PostView>(posts.subList((10*(page-1))+1,(page*10)+1));
+               ArrayList<PostView> temp = new ArrayList<>(posts.subList((10*(page-1))+1,(page*10)+1));
                posts = temp;
             }
          }
