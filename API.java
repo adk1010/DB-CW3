@@ -232,7 +232,7 @@ public class API implements APIProvider {
       if (test(getTopic(4, 0), "success")) passed++;
       else { p("Failed getTopic1"); failed++; }
 
-      if (test(getTopic(1, 2), "failure")) passed++;
+      if (test(getTopic(1, 200), "failure")) passed++;
       else { p("Failed getTopic2"); failed++; }
 
       //--likeTopic(String username, long topicId, boolean like)
