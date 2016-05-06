@@ -242,11 +242,15 @@ public class API implements APIProvider {
 
       if (test(likeTopic("jl15351", 7, true), "success")) passed++;
       else { p("Failed likeTopic3"); failed++; }
+      
+      //favouriteTopic(String username, long topicId, boolean fav)
+      if (test(favouriteTopic("noUser", 1, false), "failure")) passed++;
+      else { p("Failed favTopic1"); failed++; }
+
+      if (test(favouriteTopic("jl15351", 3, true), "success")) passed++;
+      else { p("Failed favTopic2"); failed++; }
 
       /*
-      
-      
-      favouriteTopic(String username, long topicId, boolean fav)
       //LEVEL 3*/
       //--createTopic
       //failure if any of the preconditions are not met (forum does not exist, user does not exist, title or text empty);
@@ -1281,10 +1285,10 @@ http://localhost:8000/forums
             } catch (SQLException f) {
                printError("Could not rollback, check database");
             }
-            printError("Error in likeTopic: " + ex.getMessage());
+            printError("Error in favouriteTopic: " + ex.getMessage());
          }
       }
-      return Result.fatal("Fatal likeTopic");
+      return Result.fatal("Fatal favouriteTopic");
    }
 
    /**
