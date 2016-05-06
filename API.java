@@ -111,7 +111,7 @@ public class API implements APIProvider {
       if (test(getPersonView("tb15269"), "success")) passed++;
       else { p("Failed getPersonView 1"); failed++; }
 
-      if (test(getPersonView("tb1269"), "fatal")) passed++;
+      if (test(getPersonView("tb1269"), "failure")) passed++;
       else { p("Failed getPersonView 2"); failed++; }
 
       //--getSimpleForums
@@ -136,7 +136,7 @@ public class API implements APIProvider {
       if (test(getSimpleTopic(1), "success")) passed++;
       else { p("Failed getSimpleTopic1"); failed++; }
 
-      if (test(getSimpleTopic(100), "fatal")) passed++;
+      if (test(getSimpleTopic(100), "failure")) passed++;
       else { p("Failed getSimpleTopic2"); failed++; }
 
       //--getLatestPost
@@ -395,6 +395,7 @@ public class API implements APIProvider {
               PreparedStatement s = c.prepareStatement(
                       "SELECT name, username, stuId FROM Person " + "WHERE username = ?;"
               );) {
+         if(!doesPersonExist(username)) return Result.failure("Person does not exist");
          s.setString(1, username);
          ResultSet r = s.executeQuery();
          PersonView pv = new PersonView(r.getString("name"),
@@ -402,9 +403,8 @@ public class API implements APIProvider {
                  r.getString("stuId"));
          return Result.success(pv);
       } catch (SQLException ex) {
-         printError("Error in getPersonView: " + ex.getMessage());
+         return Result.fatal("Fatal getPersonView");
       }
-      return Result.fatal("Fatal getPersonView");
    }
 
    /**
@@ -567,6 +567,7 @@ public class API implements APIProvider {
                       + "JOIN Person AS per ON p.authorid = per.id "
                       + "WHERE t.id = ?"
               );) {
+         if(!doesTopicExist(topicId)) return Result.failure("Topic does not exist");
          s.setLong(1, topicId);
 
          ResultSet r = s.executeQuery();
@@ -591,11 +592,9 @@ public class API implements APIProvider {
                  simplePostsList);
 
          return Result.success(stv);
-
       } catch (SQLException ex) {
-         printError("Error in getSimpleTopic: " + ex.getMessage());
+         return Result.fatal("Fatal getSimpleTopic");
       }
-      return Result.fatal("Fatal getSimpleTopic");
    }
 
    /**
@@ -787,6 +786,7 @@ http://localhost:8000/forums
          c.commit();
          return Result.success();
       } catch (SQLException ex) {
+         rollback(c);
          if (ex.getLocalizedMessage().contains("UNIQUE constraint failed: Forum.title")) {
             return Result.failure(ex.getMessage());
          } else {
@@ -814,11 +814,7 @@ http://localhost:8000/forums
          createStatement.executeUpdate();
          c.commit();
       } catch (SQLException ex) {
-         try {
-            c.rollback();
-         } catch (SQLException ex1) {
-            System.err.println("deleteForum rollback error");
-         }
+         rollback(c);
          System.err.println("deleteForum Error");
       }
    }
@@ -870,12 +866,7 @@ http://localhost:8000/forums
 
          return Result.success();
       } catch (SQLException ex) {
-         try {
-            c.rollback();
-         } catch (SQLException e) {
-            System.err.println("Rollback Error");
-            throw new RuntimeException("Rollback Error");
-         }
+         rollback(c);
          if (ex.getLocalizedMessage().contains("FOREIGN KEY constraint failed")) {
             return Result.failure(ex.getLocalizedMessage());
          } else if (ex.getLocalizedMessage().contains("NOT NULL constraint failed: Post.authorid")) {
@@ -910,11 +901,7 @@ http://localhost:8000/forums
          createStatement.executeUpdate();
          c.commit();
       } catch (SQLException ex) {
-         try {
-            c.rollback();
-         } catch (SQLException ex1) {
-            System.err.println("deleteForum rollback error");
-         }
+         rollback(c);
          System.err.println("deletePost Error. " + ex.getLocalizedMessage());
       }
    }
@@ -946,32 +933,23 @@ http://localhost:8000/forums
    @Override
    public Result addNewPerson(String name, String username, String studentId) {
       try (
-              PreparedStatement s = c.prepareStatement("INSERT INTO Person (name, username, stuId) VALUES (?,?,?);");) {
-         if (name == null || username == null) {
-            throw new RuntimeException("Cannot have null");
-         }
-         if (name.isEmpty() || username.isEmpty()) {
-            throw new RuntimeException("Cannot have empty");
-         }
-         if ("".equals(studentId)) {
-            throw new RuntimeException("Cannot have empty studentID. Must be null or valid.");
-         }
-         if (doesPersonExist(username)) {
-            return Result.failure("Username already exists");
-         }
+              PreparedStatement s = c.prepareStatement("INSERT INTO Person (name, username, stuId) VALUES (?,?,?);")
+              ;) {
+         if (name == null || username == null) return Result.fatal("Cannot have null");
+         if (name.isEmpty() || username.isEmpty()) return Result.fatal("Cannot have empty");
+         if ("".equals(studentId)) return Result.fatal("Cannot have empty studentID. Must be null or valid.");
+         if (doesPersonExist(username)) return Result.failure("Username already exists");
          s.setString(1, name);
          s.setString(2, username);
          s.setString(3, studentId);
          s.executeUpdate();
          c.commit();
          return Result.success();
-      } catch (RuntimeException ex) {
-         Result.fatal("Invalid arguments to addNewPerson");
-      } catch (SQLException ex) {
+      }catch (SQLException ex) {
+         rollback(c);
          System.err.println("" + ex.getLocalizedMessage());
-         Result.fatal("SQL Exception to addNewPerson");
+         return Result.fatal("SQL Exception to addNewPerson");
       }
-      return Result.fatal("not implemented yet");
    }
 
    /**
@@ -993,11 +971,7 @@ http://localhost:8000/forums
          createStatement.executeUpdate();
          c.commit();
       } catch (SQLException | RuntimeException ex) {
-         try {
-            c.rollback();
-         } catch (SQLException e) {
-            System.err.println("Rollback failed in deletePerson");
-         }
+         rollback(c);
          System.err.println("deletePerson Error. " + ex.getLocalizedMessage());
       }
    }
@@ -1204,11 +1178,7 @@ http://localhost:8000/forums
             c.commit();
             return Result.success();
          } catch (SQLException ex) {
-            try {
-               c.rollback();
-            } catch (SQLException f) {
-               printError("Could not rollback, check database");
-            }
+            rollback(c);
             printError("Error in likeTopic: " + ex.getMessage());
          }
       } else {
@@ -1230,11 +1200,7 @@ http://localhost:8000/forums
             c.commit();
             return Result.success();
          } catch (SQLException ex) {
-            try {
-               c.rollback();
-            } catch (SQLException f) {
-               printError("Could not rollback, check database");
-            }
+            rollback(c);
             printError("Error in likeTopic: " + ex.getMessage());
          }
       }
@@ -1597,6 +1563,18 @@ http://localhost:8000/forums
       }
    }
 
+   /**
+    * <p>
+    * Utility function for checking if a topic is already liked by a given person</p>
+    * <p>
+    * <b>SQL:</b> SELECT topicid, personid FROM Topic_Likers WHERE topicid = ? AND personid = (
+    * SELECT personid FROM Topic_Likers JOIN Person ON Topic_Likers.personid = Person.id 
+    * WHERE Person.username = ?);</p>
+    *
+    * @param username to search for
+    * @param topicId the id of the topic being liked
+    * @return true if exists, false if not.
+    */
    private boolean doesTopicLikeExist(String username, long topicId) {
       try (
               PreparedStatement s = c.prepareStatement(
@@ -1618,6 +1596,18 @@ http://localhost:8000/forums
       }
    }
 
+   /**
+    * <p>
+    * Utility function for checking if a topic is already favourited by a given person</p>
+    * <p>
+    * <b>SQL:</b> SELECT topicid, personid FROM Topic_Fav WHERE topicid = ? AND personid = (
+    * SELECT personid FROM Topic_Fav JOIN Person ON Topic_Fav.personid = Person.id 
+    * WHERE Person.username = ?);</p>
+    *
+    * @param username to search for
+    * @param topicId the id of the topic being favourited
+    * @return true if exists, false if not.
+    */
    private boolean doesTopicFavExist(String username, long topicId) {
       try (
               PreparedStatement s = c.prepareStatement(
@@ -1635,6 +1625,23 @@ http://localhost:8000/forums
          return r.next();
       } catch (SQLException ex) {
          printError("Error while querying if favourite exists: " + ex.getMessage());
+         return false;
+      }
+   }
+   
+   /**
+    * <p>
+    * Utility function for rolling back to connection after an exception</p>
+    *
+    * @param c the connection to the database
+    * @return true if success, false if not.
+    */
+   private boolean rollback(Connection c){
+      try {
+         c.rollback();
+         return true;
+      } catch (SQLException ex1) {
+         System.err.println("deleteForum rollback error");
          return false;
       }
    }
