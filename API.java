@@ -597,8 +597,6 @@ public class API implements APIProvider {
    }
 
    /**
-    * <h1>THIS NEEDS WORK - NEVER RETURNS FAILURE DOESN'T CHECK FOR TOPIC
-    * EXISTS</h1>
     * <p>
     * Get the latest post in a topic.</p>
     * <p>
@@ -658,8 +656,8 @@ public class API implements APIProvider {
          return Result.success(pv);
       } catch (SQLException ex) {
          printError("Error in getSimpleTopic: " + ex.getMessage());
+         return Result.fatal("Fatal getSimpleTopic");
       }
-      return Result.fatal("Fatal getSimpleTopic");
    }
 
    /*
@@ -1088,14 +1086,12 @@ http://localhost:8000/forums
     * <p>
     * <b>SQL:</b> </p>
     * <p>
-    * <b>How it works: The base case (without page number) is fairly simple
+    * <b>How it works: </b>The base case (without page number) is fairly simple
     * until counting post likes comes in. Since the post id is unique, this was
     * accomplished by using a GROUP BY postid together with outer joining the
     * post_likers table and COUNTing the number of times the postid is referred
     * to in the post_likers table. Page numbers are handled in java by
-    * manipulating the arrayList</b>
-    *
-    *
+    * manipulating the arrayList
     * </p>
     *
     * @param topicId the topic to get.
