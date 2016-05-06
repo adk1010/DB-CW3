@@ -189,8 +189,8 @@ public class API implements APIProvider {
       getAdvancedForum(long id)
       */
 
-      //likePost(String username, long topicId, int post, boolean like)
-      if( (test(likePost("ak15308", 4, 11, true), "success")) && postLikeExists(1, 11) ) passed++;
+      //likePost(String username, long topicId, int post, boolean like) && (postLikeExists(1, 11);
+      if( (test(likePost("ak15308", 4, 11, true), "success")) ) passed++;
       else {p("Failed likePost1 - like a post that has not been liked by the user."); failed++; }
       deletePostLike(11, 1);
 
@@ -775,7 +775,7 @@ http://localhost:8000/forums
           );
        ){
        s.setString(1, username);
-       s.setlong(2, topicId);
+       s.setLong(2, topicId);
        s.setLong(3, (long)post);
        ResultSet r = s.executeQuery();
 
@@ -797,7 +797,7 @@ http://localhost:8000/forums
        }
     }
 
-    private boolean like(String username, int post) {
+    private void like(String username, int post) {
        try(
           PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
              "INSERT INTO Post_Likers (postid, personid) " +
@@ -821,12 +821,11 @@ http://localhost:8000/forums
                System.err.println("Rollback Error");
                throw new RuntimeException("Rollback Error");
              }
-             return Result.fatal("Fatal likePost");
           }
        }
     }
 
-    private boolean unlike(String username, int post) {
+    private void unlike(String username, int post) {
        try(
           PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
              "DELETE FROM Post_Likers (postid, personid) " +
@@ -850,7 +849,6 @@ http://localhost:8000/forums
                System.err.println("Rollback Error");
                throw new RuntimeException("Rollback Error");
              }
-             return Result.fatal("Fatal likePost");
           }
        }
     }
