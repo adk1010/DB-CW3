@@ -5,6 +5,9 @@ cd ../../../../../../..
 ANT ON UNIX - Note for Alex
 export ANT_HOME=/Library/Ant
 export PATH=${PATH}:${ANT_HOME}/bin
+
+Javadoc note: javadoc -private -d output/directory -sourcepath src/java
+javadoc -private -d javadoc API.java
 */
 
 package uk.ac.bris.cs.databases.cwk3;
@@ -26,7 +29,10 @@ import uk.ac.bris.cs.databases.web.ApplicationContext;
  * @author csxdb
  */
 public class API implements APIProvider {
-
+   
+   /**
+    * <p>The connection to the Database</p>
+    */
     private final Connection c;
 
    /**
@@ -37,14 +43,13 @@ public class API implements APIProvider {
         this.c = c;
     }
 
-    private static final String DATABASE = "jdbc:sqlite:database/database.sqlite3";
-
    /**
     * <h1>For Running Tests Only</h1>
     * @param args Not used
     */
    public static void main(String[] args){
       //SET UP FOR TESTS
+         String DATABASE = "jdbc:sqlite:database/database.sqlite3";
          ApplicationContext c = ApplicationContext.getInstance();
          API api;
          Connection conn;
@@ -72,6 +77,15 @@ public class API implements APIProvider {
        }
     }
 
+   /**
+   * <p>Private method for unit testing API.java</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p>
+   * <b>How it works:</b> makes call to test() which checks return state
+   * equals expected return state. Prints number of tests failed and 
+   * number of tests passed.
+   * </p>
+   */
     private void tests(){
       /*
        we should make database/unitTests.sqlite3 and load that instead of
@@ -253,10 +267,28 @@ public class API implements APIProvider {
       p("Passed " + passed + " tests. Failed " + failed);
     }
 
+   /**
+   * <p>Wrapper for non-verbose printing to console</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   */
     private void p(String s){
        System.out.println(s);
     }
 
+    /**
+   * <p>Get the detailed view of a single forum.</p>
+   * <p><b>Visual Test:</b> </p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT id as topicid, title as topictitle FROM Topic WHERE forumid = ?;</p>
+   * <p>
+   * <b>How it works:</b>
+   * 
+   * 
+   * </p>
+   * @param r the result returned from method under test.
+   * @param expectedResult the result that the test expects to return
+   * @return True if expectedResult matches result(r). Else returns false.
+   */
     private boolean test(Result r, String expectedResult){
        try{
          switch(expectedResult){
@@ -703,7 +735,14 @@ http://localhost:8000/forums
       }
     }
 
-    //just for the tests
+   /**
+   * <h1>Only designed to be used for unit tests</h1>
+   * <p>Deletes forum.</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> DELETE FROM Forum WHERE title = ?;</p>
+   * <p>
+   * @param title the title of the forum to be deleted
+   */
     private void deleteForum(String title) {
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Forum WHERE title = ?;"
@@ -723,7 +762,6 @@ http://localhost:8000/forums
     }
 
    /**
-   * <h1>DELETEPOST NEEDS ROLLBACK</h1>
    * <p>Create a post in an existing topic.</p>
    * <p><b>Visual Test:</b> http://localhost:8000/newpost/1</p>
    * <p><b>Main Contributor:</b> Alex</p>
@@ -785,6 +823,16 @@ http://localhost:8000/forums
        }
     }
 
+   /**
+   * <h1>Only designed to be used for unit tests</h1>
+   * <p>Deletes post.</p>
+   * <p><b>Main Contributor:</b> Alex</p>
+   * <p><b>SQL:</b> DELETE FROM Post WHERE authorid = ? AND topicid = ? AND text = ?;</p>
+   * <p>
+   * @param authorid id of author of post to be deleted
+   * @param topicid id of topic of post to be deleted
+   * @param text text of the post to be deleted
+   */
     private void deletePost(long authorid, long topicid, String text) {
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Post WHERE authorid = ? AND topicid = ? AND text = ?;"
@@ -795,7 +843,12 @@ http://localhost:8000/forums
          createStatement.setString(3, text);
          createStatement.executeUpdate();
          c.commit();
-      }catch (SQLException | RuntimeException ex) {
+      }catch (SQLException ex) {
+         try {
+             c.rollback();
+          } catch (SQLException ex1) {
+             System.err.println("deleteForum rollback error");
+          }
           System.err.println("deletePost Error. " + ex.getLocalizedMessage());
       }
     }
@@ -842,6 +895,15 @@ http://localhost:8000/forums
        }
         return Result.fatal("not implemented yet");
     }
+    
+   /**
+   * <h1>Only designed to be used for unit tests</h1>
+   * <p>Deletes a Person of given username.</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> DELETE FROM Person WHERE username = ?;</p>
+   * <p>
+   * @param username username of person to be deleted
+   */
     private void deletePerson(String username){
        try( PreparedStatement createStatement = c.prepareStatement(
                "DELETE FROM Person WHERE username = ?;"
@@ -904,6 +966,14 @@ http://localhost:8000/forums
          }
     }
     
+   /**
+   * <p>Gets the title of the forum given the forum id</p>
+   * <p><b>Main Contributor:</b> Tom</p>
+   * <p><b>SQL:</b> SELECT title FROM Forum WHERE id = ?;</p>
+
+   * @param id the id of the forum to get.
+   * @return the title of the forum
+   */
     private String getForumTitle(long id){
        try(
    		PreparedStatement s = c.prepareStatement(
@@ -1159,7 +1229,6 @@ http://localhost:8000/forums
    }
 
    /**
-   * <h1>DELETETOPIC NEEDS TO ROLLBACK</h1>
    * <p>Create a new topic in a forum.</p>
    * <p><b>Visual Test:</b> </p>
    * <p><b>Main Contributor:</b> Tom</p>
@@ -1328,23 +1397,26 @@ http://localhost:8000/forums
         throw new UnsupportedOperationException("Not supported yet.");
     }
    
+   /**
+   * <p>Utility function for printing an error to screen</p>
+   * @param s error message to print
+   */  
     private void printError(String s){
        System.err.println(s);
     }
 
-    private void printDebug(String s){
-       System.out.println("\\x1b[32m" + s + "\\x1b[0m");
-    }
-
-    /*SELECT COUNT Topic.id
-      FROM Topic
-      WHERE Topic.id = 10;*/
+  /**
+   * <p>Utility function for checking if a topic exists</p>
+   * <p><b>SQL:</b> SELECT Topic.id FROM Topic WHERE Topic.id = ?;</p>
+   * @param topicId id to search for
+   * @return true if exists, false if not
+   */  
     private boolean doesTopicExist(long topicId){
        try(
             PreparedStatement s = c.prepareStatement(
                "SELECT Topic.id " +
                "FROM Topic " +
-               "WHERE Topic.id = ?"
+               "WHERE Topic.id = ?;"
             );
          ){
          s.setLong(1, topicId);
@@ -1361,12 +1433,16 @@ http://localhost:8000/forums
       }
     }
     
+  /**
+   * <p>Utility function for checking if a forum exists</p>
+   * <p><b>SQL:</b> SELECT id FROM Forum WHERE id = ?;</p>
+   * @param forumId id to search for
+   * @return true if exists, false if not.
+   */      
     private boolean doesForumExist(long forumId){
        try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT Forum.id " +
-               "FROM Forum " +
-               "WHERE Forum.id = ?"
+               "SELECT id FROM Forum WHERE id = ?;"
             );
          ){
          s.setLong(1, forumId);
@@ -1383,12 +1459,16 @@ http://localhost:8000/forums
       }
     }
     
+  /**
+   * <p>Utility function for checking if a person exists</p>
+   * <p><b>SQL:</b> SELECT username FROM Person WHERE username = ?;</p>
+   * @param username to search for
+   * @return true if exists, false if not.
+   */   
     private boolean doesPersonExist(String username){
        try(
             PreparedStatement s = c.prepareStatement(
-               "SELECT Person.id " +
-               "FROM Person " +
-               "WHERE Person.username = ?"
+               "SELECT id FROM Person WHERE username = ?;"
             );
          ){
          s.setString(1, username);
