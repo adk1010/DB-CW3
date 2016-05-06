@@ -450,9 +450,7 @@ public class API implements APIProvider {
                likers.add(liker);
             }
          }
-         else{
-            return Result.failure("Failure in getLikers, topic does not exist");
-         }
+         else return Result.failure("Failure in getLikers, topic does not exist");
          
          while(r.next()){
             PersonView liker = new PersonView(r.getString("name"), r.getString("username"), r.getString("stuId"));
