@@ -190,7 +190,7 @@ public class API implements APIProvider {
       */
 
       //likePost(String username, long topicId, int post, boolean like)
-      if(test(likePost("ak15308", 4, 11, false), "success")) passed++;
+      if( (test(likePost("ak15308", 4, 11, false), "success")) && postLikeExists(1, 11) ) passed++;
       else {p("Failed likePost1 - like a post that has not been liked by the user."); failed++; }
       deletePostLike(11, 1);
 
@@ -931,6 +931,38 @@ http://localhost:8000/forums
       }
     }
 
-    deletePostLike(11, 1);
+    private boolean postLikeExists(long postid, long personid) {
+      try (
+         PreparedStatement s = c.prepareStatement(
+            "SELECT postid, personid " +
+            "FROM Post_Likers " +
+            "WHERE postid = ? AND personid = ?;"
+         );
+       ){
+          s.setLong(1, postid);
+          s.setLong(2, personid);
+          ResultSet r = s.executeQuery();
+          return r.next();
+      } catch (SQLException ex) {
+         printError("Error while querying if post like exists: " + ex.getMessage());
+         return false;
+      }
+   }
+
+   private void deletePostLike(long postid, long personid){
+      try( PreparedStatement createStatement = c.prepareStatement(
+              "DELETE FROM Post_Likers WHERE postid = ? AND personid = ?;"
+           );
+        ){
+        createStatement.setLong(1, postid);
+        createStatement.setLong(2, personid);
+        createStatement.executeUpdate();
+        c.commit();
+     }catch (SQLException | RuntimeException ex) {
+         System.err.println("deletePostLike Error. " + ex.getLocalizedMessage());
+     }
+   }
+
+
 
    }
