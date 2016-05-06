@@ -189,10 +189,25 @@ public class API implements APIProvider {
       getAdvancedForum(long id)
       */
 
-      //likePost(String username, long topicId, int post, boolean like) && (postLikeExists(1, 11);
-      if( (test(likePost("ak15308", 4, 11, true), "success")) ) passed++;
+      //likePost(String username, long topicId, int post, boolean like
+      if( (test(likePost("ak15308", 4, 11, true), "success")) && (postLikeExists(1, 11)) ) passed++;
       else {p("Failed likePost1 - like a post that has not been liked by the user."); failed++; }
+
+      if( (test(likePost("ak15308", 4, 11, true), "success")) ) passed++;
+      else {p("Failed likePost2 - like a post that has already been liked by the user."); failed++; }
       deletePostLike(11, 1);
+
+      if( (test(likePost("", 4, 11, true), "failure")) ) passed++;
+      else {p("Failed likePost3 - empty username."); failed++; }
+
+      if( (test(likePost("ak15308", 44, 11, true), "failure")) ) passed++;
+      else {p("Failed likePost4 - topic does not exist."); failed++; }
+
+      if( (test(likePost("ak15308", 4, 111, true), "failure")) ) passed++;
+      else {p("Failed likePost5 - post does not exist."); failed++; }
+
+
+
 
       p("Passed " + passed + " tests. Failed " + failed);
     }
@@ -781,12 +796,12 @@ http://localhost:8000/forums
 
        if (r.next()) { //If the selected post has already been liked.
           if (!like) {
-             unlike(username, post);
+             executeUnlike(username, post);
           }
        }
        else { //If the selected post has not already been liked.
           if (like) {
-             like(username, post);
+             executeLike(username, post);
           }
        }
        return Result.success();
@@ -797,7 +812,7 @@ http://localhost:8000/forums
        }
     }
 
-    private void like(String username, int post) {
+    private void executeLike(String username, int post) {
        try(
           PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
              "INSERT INTO Post_Likers (postid, personid) " +
@@ -825,7 +840,7 @@ http://localhost:8000/forums
        }
     }
 
-    private void unlike(String username, int post) {
+    private void executeUnlike(String username, int post) {
        try(
           PreparedStatement createStatement = c.prepareStatement( // this gets post likers with this info
              "DELETE FROM Post_Likers (postid, personid) " +
@@ -940,7 +955,8 @@ http://localhost:8000/forums
           s.setLong(1, postid);
           s.setLong(2, personid);
           ResultSet r = s.executeQuery();
-          return r.next();
+          r.next();
+          return true;
       } catch (SQLException ex) {
          printError("Error while querying if post like exists: " + ex.getMessage());
          return false;
