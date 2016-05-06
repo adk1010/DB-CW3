@@ -466,10 +466,10 @@ public class API implements APIProvider {
     */
    @Override
    public Result<Integer> countPostsInTopic(long topicId) {
-      try {
-         PreparedStatement s = c.prepareStatement(
-                 "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;"
-         );
+      try (
+              PreparedStatement s = c.prepareStatement(
+                      "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;"
+              );) {
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
          return Result.success(r.getInt("numposts"));
