@@ -100,12 +100,8 @@ public class API implements APIProvider {
       int failed = 0;
 
       //--getUsers
-      if (test(getUsers(), "success")) {
-         passed++;
-      } else {
-         p("Failed getUsers");
-         failed++;
-      }
+      if (test(getUsers(), "success")) passed++;
+      else { p("Failed getUsers"); failed++; }
 
       //--getPersonView
       if (test(getPersonView("tb15269"), "success")) passed++;
@@ -116,6 +112,9 @@ public class API implements APIProvider {
       
       if (test(getPersonView(""), "failure")) passed++;
       else { p("Failed getPersonView 2"); failed++; }
+      
+      if (test(getPersonView(null), "failure")) passed++;
+      else { p("Failed getPersonView 2"); failed++; }
 
       //--getSimpleForums
       if (test(getSimpleForums(), "success")) passed++;
@@ -123,6 +122,9 @@ public class API implements APIProvider {
 
       //--countPostsInTopic
       if (test(countPostsInTopic(1), "success")) passed++;
+      else { p("Failed countPostsInTopic"); failed++; }
+      
+      if (test(countPostsInTopic(100), "failure")) passed++;
       else { p("Failed countPostsInTopic"); failed++; }
 
       //--getLikers
@@ -142,6 +144,9 @@ public class API implements APIProvider {
       if (test(getSimpleTopic(100), "failure")) passed++;
       else { p("Failed getSimpleTopic2"); failed++; }
 
+      if (test(getSimpleTopic(18), "fatal")) passed++;
+      else { p("Failed getSimpleTopic3 - topic with no posts"); failed++; }
+      
       //--getLatestPost
       if (test(getLatestPost(1), "success")) passed++;
       else { p("Failed getLatestPost1"); failed++; }
@@ -180,10 +185,15 @@ public class API implements APIProvider {
 
       if (test(createPost(1, "", "testPost"), "failure")) passed++;
       else { p("Failed createPost4 - Empty username"); failed++; }
+      
+      if (test(createPost(1, null, "testPost"), "failure")) passed++;
+      else { p("Failed createPost4.5 - Empty username"); failed++; }
 
       if (test(createPost(1, "tb1529", ""), "failure")) passed++; 
-      else { p("Failed createPost5 - Empty text"); failed++;
-      }
+      else { p("Failed createPost5 - Empty text"); failed++; }
+      
+      if (test(createPost(1, "tb1529", null), "failure")) passed++; 
+      else { p("Failed createPost6 - null text"); failed++; }
 
       //--addNewPerson(String name, String username, String studentId)
       deletePerson("santababy");
@@ -420,7 +430,8 @@ public class API implements APIProvider {
               PreparedStatement s = c.prepareStatement(
                       "SELECT name, username, stuId FROM Person " + "WHERE username = ?;"
               );) {
-         if(username.isEmpty()) return Result.failure(username);
+         if(username == null) return Result.failure("Username cannot be null");
+         if(username.isEmpty()) return Result.failure("Username cannot be empty");
          if(!doesPersonExist(username)) return Result.failure("Person does not exist");
          s.setString(1, username);
          ResultSet r = s.executeQuery();
@@ -496,13 +507,14 @@ public class API implements APIProvider {
               PreparedStatement s = c.prepareStatement(
                       "SELECT COUNT(*) AS numposts FROM POST WHERE topicid = ?;"
               );) {
+         if(!doesTopicExist(topicId)) return Result.failure("Topic does not exist");
          s.setLong(1, topicId);
          ResultSet r = s.executeQuery();
          return Result.success(r.getInt("numposts"));
       }catch(SQLException ex){
          printError("Error in countPostsInTopic: " + ex.getMessage());
+         return Result.failure("Fatal countPostsInTopic");
       }
-      return Result.fatal("Fatal countPostsInTopic");
     }
 
    /**
