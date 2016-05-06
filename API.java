@@ -113,6 +113,9 @@ public class API implements APIProvider {
 
       if (test(getPersonView("tb1269"), "failure")) passed++;
       else { p("Failed getPersonView 2"); failed++; }
+      
+      if (test(getPersonView(""), "failure")) passed++;
+      else { p("Failed getPersonView 2"); failed++; }
 
       //--getSimpleForums
       if (test(getSimpleForums(), "success")) passed++;
@@ -223,7 +226,7 @@ public class API implements APIProvider {
       if (test(getForum(100), "failure")) passed++;
       else { p("Failed getForum2"); failed++; }
       
-      if (test(getForum(5), "failure")) passed++;
+      if (test(getForum(5), "success")) passed++;
       else { p("Failed getForum3 - forum with no topics"); failed++; }
 
       //--getTopic(long topicId, int page)
@@ -413,12 +416,11 @@ public class API implements APIProvider {
     */
    @Override
    public Result<PersonView> getPersonView(String username) {
-      Params.cannotBeEmpty(username);
-      Params.cannotBeNull(username);
       try (
               PreparedStatement s = c.prepareStatement(
                       "SELECT name, username, stuId FROM Person " + "WHERE username = ?;"
               );) {
+         if(username.isEmpty()) return Result.failure(username);
          if(!doesPersonExist(username)) return Result.failure("Person does not exist");
          s.setString(1, username);
          ResultSet r = s.executeQuery();
