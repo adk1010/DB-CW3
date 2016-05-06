@@ -1,14 +1,3 @@
-/*
-cd src/uk/ac/bris/cs/databases/cwk3
-cd ../../../../../../..
-
-ANT ON UNIX - Note for Alex
-export ANT_HOME=/Library/Ant
-export PATH=${PATH}:${ANT_HOME}/bin
-
-Javadoc note: javadoc -private -d output/directory -sourcepath src/java
-javadoc -private -d javadoc API.java
- */
 package uk.ac.bris.cs.databases.cwk3;
 
 import java.sql.*;
@@ -699,37 +688,6 @@ public class API implements APIProvider {
       }
    }
 
-   /*
-.header on
-.mode column
-SELECT lastTopic.id AS topicid, lastTopic.forumid AS topicForumid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
-FROM Forum AS f
-JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
-   FROM Topic t
-   JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.postedAt
-) AS lastTopic ON f.id = lastTopic.forumid
-GROUP BY f.title;
-
-BELOW IS THE SHORTENED QUERY WITHOUT SELECTING lastTopic.forumid BECAUSE IT IS THE SAME AS f.id.
-
-.header on
-.mode column
-SELECT lastTopic.id AS topicid, lastTopic.title AS topicTitle, f.title AS title, f.id AS id
-FROM Forum AS f
-JOIN (
-   SELECT t.id AS id, t.forumid AS forumid, t.title AS title, p.postedAt AS postedAt
-   FROM Topic t
-   JOIN Post AS p ON t.id = p.topicid
-   GROUP BY p.postedAt
-) AS lastTopic ON f.id = lastTopic.forumid
-GROUP BY f.title;
-
-
-Test with:
-http://localhost:8000/forums
-    */
    /**
     * <p>
     * Get the "main page" containing a list of forums ordered alphabetically by
@@ -1423,6 +1381,7 @@ http://localhost:8000/forums
    }
 
    /**
+    * <p>Not Implemented</p>
     * <p>
     * Get the "main page" containing a list of forums ordered alphabetically by
     * title. Advanced version.</p>
@@ -1446,6 +1405,7 @@ http://localhost:8000/forums
    }
 
    /**
+    * <p>Not Implemented</p>
     * <p>
     * Get an AdvancedPersonView for the person with the given username.</p>
     * <p>
@@ -1470,6 +1430,7 @@ http://localhost:8000/forums
    }
 
    /**
+    * <p>Not implemented</p>
     * <p>
     * Get the detailed view of a single forum, advanced version.</p>
     * <p>
@@ -1844,3 +1805,16 @@ http://localhost:8000/forums
       }
    }
 }
+
+/*
+NOTES:
+   cd src/uk/ac/bris/cs/databases/cwk3
+   cd ../../../../../../..
+
+   ANT ON UNIX - Note for Alex
+   export ANT_HOME=/Library/Ant
+   export PATH=${PATH}:${ANT_HOME}/bin
+
+   Javadoc note: javadoc -private -d output/directory -sourcepath src/java
+   javadoc -private -d javadoc API.java
+ */
