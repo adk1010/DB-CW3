@@ -187,8 +187,12 @@ public class API implements APIProvider {
       /*getAdvancedForums()
       getAdvancedPersonView(String username)
       getAdvancedForum(long id)
-      likePost(String username, long topicId, int post, boolean like)
       */
+
+      //likePost(String username, long topicId, int post, boolean like)
+      if(test(likePost("ak15308", 4, 11, false), "success")) passed++;
+      else {p("Failed likePost1 - like a post that has not been liked by the user."); failed++; }
+      deletePostLike(11, 1);
 
       p("Passed " + passed + " tests. Failed " + failed);
     }
@@ -926,5 +930,7 @@ http://localhost:8000/forums
          return false;
       }
     }
+
+    deletePostLike(11, 1);
 
    }
