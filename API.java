@@ -14,13 +14,7 @@ package uk.ac.bris.cs.databases.cwk3;
 
 import java.sql.*;
 import java.time.Instant;
-//import java.util.List;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.sqlite.SQLiteConfig;
-//import java.util.logging.Level;
-//import java.util.logging.Logger;
 import uk.ac.bris.cs.databases.api.*;
 import uk.ac.bris.cs.databases.util.Params;
 import uk.ac.bris.cs.databases.web.ApplicationContext;
